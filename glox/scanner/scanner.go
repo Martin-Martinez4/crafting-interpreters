@@ -1,6 +1,7 @@
 package scanner
 
 import (
+	"github.com/Martin-Martinez4/crafting-interpreters/glox/errorhandling"
 	"github.com/Martin-Martinez4/crafting-interpreters/glox/token"
 )
 
@@ -15,7 +16,7 @@ type Scanner struct {
 func NewScanner(source string) *Scanner {
 	return &Scanner{
 		source:  source,
-		tokens:  make([]token.Token, 10),
+		tokens:  make([]token.Token, 0),
 		start:   0,
 		current: 0,
 		line:    1,
@@ -26,44 +27,63 @@ func (s *Scanner) isAtEnd() bool {
 	return s.current >= len(s.source)
 }
 
-func (s *Scanner) scanToken(){
-	byte c := s.advance()
+func (s *Scanner) scanTokens() {
+	for !s.isAtEnd() {
+		s.start = s.current
+		s.scanToken()
+
+	}
+
+	s.tokens = append(s.tokens, *token.NewToken(token.EOF, "", nil, s.line))
+}
+
+func (s *Scanner) scanToken() {
+	c := s.advance()
+
 	switch c {
 	case '(':
-		s.addToken(token.LEFT_PAREN)
+		s.addToken(token.LEFT_PAREN, nil)
 		break
-	case ')'
-		s.addToken(token.RIGHT_PAREN)
+	case ')':
+		s.addToken(token.RIGHT_PAREN, nil)
 		break
 	case '{':
-		s.addToken(token.LEFT_BRACE)
+		s.addToken(token.LEFT_BRACE, nil)
 		break
 	case '}':
-		s.addToken(token.RIGHT_BRACE)
+		s.addToken(token.RIGHT_BRACE, nil)
 		break
 	case ',':
-		s.addToken(token.COMMA)
+		s.addToken(token.COMMA, nil)
 		break
 	case '.':
-		s.addToken(token.DOT)
+		s.addToken(token.DOT, nil)
+	case '=':
+		s.addToken(token.EQUAL, nil)
 		break
 	case '+':
-		s.addToken(token.PLUS)
+		s.addToken(token.PLUS, nil)
 		break
 	case ';':
-		s.addToken(token.SEMICOLON)
+		s.addToken(token.SEMICOLON, nil)
 		break
 	case '*':
-		s.addToken(token.STAR)
+		s.addToken(token.STAR, nil)
+		break
+	default:
+		errorhandling.ReportAndExit(s.line, "", "unexpected character.")
 		break
 	}
 }
 
 func (s *Scanner) advance() byte {
-	return s.source[s.current++]
+	r := s.source[s.current]
+	s.current++
+	return r
 }
 
-func (s *Scanner) addToken(type string, literal any){
-	text := s.source[s.start, s.current]
-	tokens := append(tokens, token.NewToken(type, text, literal, s.line))
+func (s *Scanner) addToken(t token.TokenType, literal any) {
+	text := s.source[s.start:s.current]
+	s.tokens = append(s.tokens, *token.NewToken(t, text, literal, s.line))
+
 }

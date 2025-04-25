@@ -43,6 +43,8 @@ const (
 	THIS   = "THIS"
 	WHILE  = "WHILE"
 
+	EOF = "EOF"
+
 	// may have to change to NULL
 	NIL = "NIL"
 )

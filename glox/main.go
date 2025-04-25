@@ -50,8 +50,3 @@ func runPrompt(in io.Reader, out io.Writer) {
 		run(scanner.Text())
 	}
 }
-
-func reportAndExit(line int, where, message string) {
-	fmt.Printf("line %d Error at %s: %s \n", line, where, message)
-	os.Exit(1)
-}
