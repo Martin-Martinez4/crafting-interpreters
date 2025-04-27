@@ -50,11 +50,16 @@ func NewScanner(source string) *Scanner {
 	}
 }
 
+func (s *Scanner) GetTokens() []token.Token {
+	fmt.Println(len(s.tokens))
+	return s.tokens
+}
+
 func (s *Scanner) isAtEnd() bool {
 	return s.current >= len(s.source)
 }
 
-func (s *Scanner) scanTokens() {
+func (s *Scanner) ScanTokens() {
 	for !s.isAtEnd() {
 		s.start = s.current
 		s.scanToken()
@@ -99,6 +104,8 @@ func (s *Scanner) scanToken() {
 
 	case '+':
 		s.addToken(token.PLUS, nil)
+	case '-':
+		s.addToken(token.MINUS, nil)
 
 	case ';':
 		s.addToken(token.SEMICOLON, nil)

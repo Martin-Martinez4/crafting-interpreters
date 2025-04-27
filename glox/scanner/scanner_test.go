@@ -27,7 +27,7 @@ func TestSimpleTokenInput(t *testing.T) {
 	}
 
 	s := NewScanner(input)
-	s.scanTokens()
+	s.ScanTokens()
 
 	for i, tt := range tests {
 		tok := s.tokens[i]
@@ -65,7 +65,7 @@ func TestSimpleTokenInputSkipWhiteSpace(t *testing.T) {
 	}
 
 	s := NewScanner(input)
-	s.scanTokens()
+	s.ScanTokens()
 
 	for i, tt := range tests {
 		tok := s.tokens[i]
@@ -103,7 +103,7 @@ func TestDoubleCharInputs(t *testing.T) {
 	}
 
 	s := NewScanner(input)
-	s.scanTokens()
+	s.ScanTokens()
 
 	for i, tt := range tests {
 		tok := s.tokens[i]
@@ -143,7 +143,7 @@ func TestDoubleCharInputsSkipWhiteSpace(t *testing.T) {
 	}
 
 	s := NewScanner(input)
-	s.scanTokens()
+	s.ScanTokens()
 
 	for i, tt := range tests {
 		tok := s.tokens[i]
@@ -179,7 +179,7 @@ func TestSkipOneLineComment(t *testing.T) {
 	}
 
 	s := NewScanner(input)
-	s.scanTokens()
+	s.ScanTokens()
 
 	for i, tt := range tests {
 		tok := s.tokens[i]
@@ -210,7 +210,7 @@ func TestStringLiterals(t *testing.T) {
 	}
 
 	s := NewScanner(input)
-	s.scanTokens()
+	s.ScanTokens()
 
 	for i, tt := range tests {
 		tok := s.tokens[i]
@@ -241,7 +241,7 @@ func TestStringLiterals(t *testing.T) {
 	}
 
 	s = NewScanner(input)
-	s.scanTokens()
+	s.ScanTokens()
 
 	for i, tt := range tests {
 		tok := s.tokens[i]

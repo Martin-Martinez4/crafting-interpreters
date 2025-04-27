@@ -5,20 +5,59 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/Martin-Martinez4/crafting-interpreters/glox/ast"
+	"github.com/Martin-Martinez4/crafting-interpreters/glox/parser"
+	"github.com/Martin-Martinez4/crafting-interpreters/glox/scanner"
+	"github.com/Martin-Martinez4/crafting-interpreters/glox/token"
 )
 
 func main() {
-	args := os.Args[1:]
 
-	lenArgs := len(args)
+	// expression := ast.Binary{
+	// 	Left: ast.Unary{
+	// 		Operator: *token.NewToken(token.MINUS, "-", nil, 1),
+	// 		Right: ast.Literal{
+	// 			Value: 123,
+	// 		},
+	// 	},
+	// 	Operator: *token.NewToken(token.STAR, "*", nil, 1),
+	// 	Right: ast.Grouping{
+	// 		Expression: ast.Literal{Value: 45.67},
+	// 	},
+	// }
 
-	if lenArgs > 1 {
-		println("Usage: glox [script]")
-	} else if lenArgs == 1 {
-		runFile(args[1])
-	} else {
-		runPrompt(os.Stdin, os.Stdout)
-	}
+	minusOp := token.NewToken(token.MINUS, "-", nil, 1)
+	starOp := token.NewToken(token.STAR, "*", nil, 1)
+
+	expression := ast.NewBinaryExpr(
+		ast.NewUnaryExpr(minusOp, ast.NewLiteralExpr(123)),
+		starOp,
+		ast.NewGroupingExpr(ast.NewLiteralExpr(45.67)),
+	)
+
+	astp := ast.AstPrinter{}
+	fmt.Println(astp.Print(expression))
+
+	scanner := scanner.NewScanner("22 + 2 / (2 * 8) + 10 /4")
+	scanner.ScanTokens()
+
+	p := parser.NewParser(scanner.GetTokens())
+	exprs := p.Parse()
+
+	fmt.Println(astp.Print(exprs))
+
+	// args := os.Args[1:]
+
+	// lenArgs := len(args)
+
+	// if lenArgs > 1 {
+	// 	println("Usage: glox [script]")
+	// } else if lenArgs == 1 {
+	// 	runFile(args[1])
+	// } else {
+	// 	runPrompt(os.Stdin, os.Stdout)
+	// }
 }
 
 func runFile(path string) error {
