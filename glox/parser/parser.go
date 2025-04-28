@@ -224,6 +224,17 @@ func (p *Parser) primary() Expr {
 	panic(fmt.Sprintf("error at line %d: unknown token '%s'", p.peek().Line, p.peek().Literal))
 }
 
+func (p *Parser) block() []Stmt {
+	statements := make([]Stmt, 10)
+
+	for !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
+		statements = append(statements, p.declaration())
+	}
+
+	p.consume(token.RIGHT_BRACE, "Expect '}' after block.")
+	return statements
+}
+
 func (p *Parser) consume(t token.TokenType, message string) (*token.Token, error) {
 	if p.check(t) {
 		return p.advance(), nil

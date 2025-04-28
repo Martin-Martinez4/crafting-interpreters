@@ -14,7 +14,7 @@ type Interpreter struct {
 
 func (i *Interpreter) Interpret(statements []Stmt) {
 
-	i.environment = NewEnvironment()
+	i.environment = NewEnvironment(nil)
 
 	for _, s := range statements {
 		s.Accept(i)
@@ -194,6 +194,23 @@ func isTruthy(object any) bool {
 		return true
 	}
 	return b
+}
+
+func (i *Interpreter) visitBlockStmt(block *BlockStmt) error {
+	i.executeBlock(block.statments, NewEnvironment(i.environment))
+	return nil
+}
+
+func (i *Interpreter) executeBlock(statements []Stmt, env *Environment) {
+	prev := i.environment
+	defer func() {
+		i.environment = prev
+	}()
+
+	i.environment = env
+	for _, statement := range statements {
+		statement.Accept(i)
+	}
 }
 
 func isEqual(a any, b any) bool {

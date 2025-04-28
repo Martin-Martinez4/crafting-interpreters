@@ -10,6 +10,7 @@ type StmtVisitor interface {
 	visitPrintStmt(*PrintStmt) error
 	visitExpressionStmt(*ExprStmt) error
 	visitVariableStmt(*VarStmt) error
+	visitBlockStmt(*BlockStmt) error
 }
 
 type PrintStmt struct {
@@ -35,4 +36,12 @@ type VarStmt struct {
 
 func (vs *VarStmt) Accept(v StmtVisitor) error {
 	return v.visitVariableStmt(vs)
+}
+
+type BlockStmt struct {
+	statments []Stmt
+}
+
+func (vb *BlockStmt) Accept(v StmtVisitor) error {
+	return v.visitBlockStmt(vb)
 }
