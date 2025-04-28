@@ -48,10 +48,12 @@ func main() {
 
 	lenArgs := len(args)
 
+	fmt.Println(args)
+
 	if lenArgs > 1 {
 		println("Usage: glox [script]")
 	} else if lenArgs == 1 {
-		runFile(args[1])
+		runFile(args[0])
 	} else {
 		runPrompt(os.Stdin, os.Stdout)
 	}

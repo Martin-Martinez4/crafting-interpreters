@@ -209,6 +209,7 @@ func (i *Interpreter) executeBlock(statements []Stmt, env *Environment) {
 
 	i.environment = env
 	for _, statement := range statements {
+		// fmt.Println(statement)
 		statement.Accept(i)
 	}
 }

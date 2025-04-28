@@ -47,6 +47,9 @@ func (p *Parser) varDeclaration() Stmt {
 		initializer = p.expression()
 	}
 	p.consume(token.SEMICOLON, "Expect ';' after variable declaration.")
+	if err != nil {
+		panic("Boo")
+	}
 	return &VarStmt{name: name, initializer: initializer}
 
 }
@@ -55,19 +58,28 @@ func (p *Parser) statement() Stmt {
 	if p.match(token.PRINT) {
 		return p.printStatement()
 	}
+	if p.match(token.LEFT_BRACE) {
+		return &BlockStmt{p.block()}
+	}
 
 	return p.expressionStatement()
 }
 
 func (p *Parser) printStatement() Stmt {
 	value := p.expression()
-	p.consume(token.SEMICOLON, "Expect ';' after value.")
+	_, err := p.consume(token.SEMICOLON, "Expect ';' after value.")
+	if err != nil {
+		panic("Boo")
+	}
 	return &PrintStmt{value}
 }
 
 func (p *Parser) expressionStatement() Stmt {
 	expr := p.expression()
-	p.consume(token.SEMICOLON, "Expect ';' after expression.")
+	_, err := p.consume(token.SEMICOLON, "Expect ';' after expression.")
+	if err != nil {
+		panic("Boo")
+	}
 	return &ExprStmt{expr}
 }
 
@@ -225,13 +237,16 @@ func (p *Parser) primary() Expr {
 }
 
 func (p *Parser) block() []Stmt {
-	statements := make([]Stmt, 10)
+	statements := []Stmt{}
 
 	for !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
 		statements = append(statements, p.declaration())
 	}
 
-	p.consume(token.RIGHT_BRACE, "Expect '}' after block.")
+	_, err := p.consume(token.RIGHT_BRACE, "Expect '}' after block.")
+	if err != nil {
+		panic("Boo")
+	}
 	return statements
 }
 

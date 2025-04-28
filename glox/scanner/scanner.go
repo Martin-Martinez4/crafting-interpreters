@@ -262,7 +262,7 @@ func (s *Scanner) handleString() {
 	s.advance()
 
 	value := s.source[(s.start + 1):(s.current - 1)]
-	fmt.Println(value)
+	// fmt.Println(value)
 	s.addToken(token.STRING, value)
 }
 

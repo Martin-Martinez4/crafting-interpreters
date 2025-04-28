@@ -9,30 +9,22 @@ type Environment struct {
 
 func NewEnvironment(enclosing *Environment) *Environment {
 	return &Environment{
-		values:    make(map[string]any),
+		values:    map[string]any{},
 		enclosing: enclosing,
 	}
 }
 
 func (e *Environment) Get(name *token.Token) any {
 	v, ok := e.values[name.Lexeme]
-	if !ok {
+	if ok {
 
-		if e.enclosing != nil {
-
-			e := e.enclosing.Get(name)
-			if !ok {
-
-				panic("undefined variable '" + name.Lexeme + "'.")
-			} else {
-				return e
-			}
-		} else {
-			panic("undefined variable '" + name.Lexeme + "'.")
-		}
+		return v
 
 	}
-	return v
+	if e.enclosing != nil {
+		return e.enclosing.Get(name)
+	}
+	panic("boom")
 }
 
 func (e *Environment) define(name string, value any) {
@@ -41,16 +33,15 @@ func (e *Environment) define(name string, value any) {
 
 func (e *Environment) Assign(name *token.Token, value any) {
 	_, ok := e.values[name.Lexeme]
-	if !ok {
+	if ok {
 
-		if e.enclosing != nil {
-			e.enclosing.Assign(name, value)
-		} else {
+		e.define(name.Lexeme, value)
+	}
+	if e.enclosing != nil {
+		e.enclosing.Assign(name, value)
+	} else {
 
-			panic("undefined variable '" + name.Lexeme + "'.")
-		}
-
+		panic("undefined variable '" + name.Lexeme + "'.")
 	}
 
-	e.define(name.Lexeme, value)
 }
