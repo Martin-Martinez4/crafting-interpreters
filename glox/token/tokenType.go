@@ -9,7 +9,7 @@ const (
 	DOT         = "."
 	MINUS       = "-"
 	PLUS        = "+"
-	SEMICOLON   = ":"
+	SEMICOLON   = ";"
 	SLASH       = "/"
 	STAR        = "*"
 

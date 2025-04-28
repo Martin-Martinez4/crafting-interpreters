@@ -1,4 +1,4 @@
-package ast
+package parser
 
 import (
 	"github.com/Martin-Martinez4/crafting-interpreters/glox/token"
@@ -29,6 +29,8 @@ type ExprVisitor interface {
 	VisitLiteral(expr *Literal) any
 
 	VisitUnary(expr *Unary) any
+	VisitVariable(expr *Variable) any
+	VisitAssign(expr *Assign) any
 }
 
 type Binary struct {
@@ -95,4 +97,34 @@ func NewUnaryExpr(operator *token.Token, right Expr) *Unary {
 
 func (u *Unary) Accept(visitor ExprVisitor) any {
 	return visitor.VisitUnary(u)
+}
+
+type Variable struct {
+	name *token.Token
+	defaultStartEnd
+}
+
+func NewVariableExpr(name *token.Token) *Variable {
+	return &Variable{name: name}
+}
+
+func (v *Variable) Accept(visitor ExprVisitor) any {
+	return visitor.VisitVariable(v)
+}
+
+type Assign struct {
+	name  *token.Token
+	value Expr
+	defaultStartEnd
+}
+
+func NewAssignExpr(name *token.Token, value Expr) *Assign {
+	return &Assign{
+		name:  name,
+		value: value,
+	}
+}
+
+func (a *Assign) Accept(visitor ExprVisitor) any {
+	return visitor.VisitAssign(a)
 }

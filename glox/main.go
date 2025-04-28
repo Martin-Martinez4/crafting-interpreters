@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 
-	"github.com/Martin-Martinez4/crafting-interpreters/glox/ast"
 	"github.com/Martin-Martinez4/crafting-interpreters/glox/parser"
 	"github.com/Martin-Martinez4/crafting-interpreters/glox/scanner"
 	"github.com/Martin-Martinez4/crafting-interpreters/glox/token"
@@ -30,34 +29,32 @@ func main() {
 	minusOp := token.NewToken(token.MINUS, "-", nil, 1)
 	starOp := token.NewToken(token.STAR, "*", nil, 1)
 
-	expression := ast.NewBinaryExpr(
-		ast.NewUnaryExpr(minusOp, ast.NewLiteralExpr(123)),
+	expression := parser.NewBinaryExpr(
+		parser.NewUnaryExpr(minusOp, parser.NewLiteralExpr(123)),
 		starOp,
-		ast.NewGroupingExpr(ast.NewLiteralExpr(45.67)),
+		parser.NewGroupingExpr(parser.NewLiteralExpr(45.67)),
 	)
 
-	astp := ast.AstPrinter{}
+	astp := parser.AstPrinter{}
 	fmt.Println(astp.Print(expression))
 
 	scanner := scanner.NewScanner("22 + 2 / (2 * 8) + 10 /4")
 	scanner.ScanTokens()
 
-	p := parser.NewParser(scanner.GetTokens())
-	exprs := p.Parse()
+	// p := parser.NewParser(scanner.GetTokens())
+	// stmts := p.Parse()
 
-	fmt.Println(astp.Print(exprs))
+	args := os.Args[1:]
 
-	// args := os.Args[1:]
+	lenArgs := len(args)
 
-	// lenArgs := len(args)
-
-	// if lenArgs > 1 {
-	// 	println("Usage: glox [script]")
-	// } else if lenArgs == 1 {
-	// 	runFile(args[1])
-	// } else {
-	// 	runPrompt(os.Stdin, os.Stdout)
-	// }
+	if lenArgs > 1 {
+		println("Usage: glox [script]")
+	} else if lenArgs == 1 {
+		runFile(args[1])
+	} else {
+		runPrompt(os.Stdin, os.Stdout)
+	}
 }
 
 func runFile(path string) error {
@@ -72,20 +69,41 @@ func runFile(path string) error {
 }
 
 func run(source string) {
-	fmt.Println("Coming Soon")
+	// astp := parser.AstPrinter{}
+	scanner := scanner.NewScanner(source)
+	scanner.ScanTokens()
+
+	p := parser.NewParser(scanner.GetTokens())
+
+	// for i := 0; i < len(scanner.GetTokens()); i++ {
+	// 	fmt.Printf("error at line %d: unknown token '%s' %s\n", scanner.GetTokens()[i].Line, scanner.GetTokens()[i].Lexeme, scanner.GetTokens()[i].Type)
+	// }
+
+	stmts := p.Parse()
+
+	// pstmt, ok := stmts[0].(*parser.PrintStmt)
+	// if !ok {
+	// 	panic("Boo")
+	// }
+
+	// fmt.Println(pstmt.Expr)
+
+	i := parser.Interpreter{}
+	i.Interpret(stmts)
+
 }
 
 func runPrompt(in io.Reader, out io.Writer) {
 	PROMPT := "->"
-	scanner := bufio.NewScanner(in)
+	s := bufio.NewScanner(in)
 
 	for {
 		fmt.Fprint(out, PROMPT)
-		scanned := scanner.Scan()
+		scanned := s.Scan()
 		if !scanned {
 			break
 		}
 
-		run(scanner.Text())
+		run(s.Text())
 	}
 }

@@ -3,7 +3,6 @@ package parser
 import (
 	"fmt"
 
-	"github.com/Martin-Martinez4/crafting-interpreters/glox/ast"
 	"github.com/Martin-Martinez4/crafting-interpreters/glox/errorhandling"
 	"github.com/Martin-Martinez4/crafting-interpreters/glox/token"
 )
@@ -20,21 +19,89 @@ func NewParser(tokens []token.Token) *Parser {
 	}
 }
 
-func (p *Parser) Parse() ast.Expr {
-	return p.expression()
+func (p *Parser) Parse() []Stmt {
+	statements := []Stmt{}
+	for !p.isAtEnd() {
+		// statements = append(statements, p.statement())
+		statements = append(statements, p.declaration())
+	}
+
+	return statements
 }
 
-func (p *Parser) expression() ast.Expr {
-	return p.equality()
+func (p *Parser) declaration() Stmt {
+	if p.match(token.VAR) {
+		return p.varDeclaration()
+	}
+	return p.statement()
 }
 
-func (p *Parser) equality() ast.Expr {
+func (p *Parser) varDeclaration() Stmt {
+	name, err := p.consume(token.IDENTIFIER, "Expect variable name.")
+	if err != nil {
+		panic("Boo")
+	}
+
+	var initializer Expr
+	if p.match(token.EQUAL) {
+		initializer = p.expression()
+	}
+	p.consume(token.SEMICOLON, "Expect ';' after variable declaration.")
+	return &VarStmt{name: name, initializer: initializer}
+
+}
+
+func (p *Parser) statement() Stmt {
+	if p.match(token.PRINT) {
+		return p.printStatement()
+	}
+
+	return p.expressionStatement()
+}
+
+func (p *Parser) printStatement() Stmt {
+	value := p.expression()
+	p.consume(token.SEMICOLON, "Expect ';' after value.")
+	return &PrintStmt{value}
+}
+
+func (p *Parser) expressionStatement() Stmt {
+	expr := p.expression()
+	p.consume(token.SEMICOLON, "Expect ';' after expression.")
+	return &ExprStmt{expr}
+}
+
+func (p *Parser) expression() Expr {
+	return p.assignment()
+}
+
+func (p *Parser) assignment() Expr {
+	expr := p.equality()
+
+	if p.match(token.EQUAL) {
+		equals := p.previous()
+		value := p.assignment()
+
+		e, ok := expr.(*Variable)
+		if !ok {
+			panic(equals.Lexeme + " invalid assignment target.")
+		}
+
+		return NewAssignExpr(e.name, value)
+
+	} else {
+
+		return expr
+	}
+
+}
+func (p *Parser) equality() Expr {
 	expr := p.comparison()
 
 	for p.match(token.BANG_EQUAL, token.EQUAL_EQUAL) {
 		operator := p.previous()
 		right := p.comparison()
-		expr = ast.NewBinaryExpr(expr, operator, right)
+		expr = NewBinaryExpr(expr, operator, right)
 	}
 
 	return expr
@@ -80,65 +147,69 @@ func (p *Parser) isAtEnd() bool {
 	return p.peek().Type == token.EOF
 }
 
-func (p *Parser) comparison() ast.Expr {
+func (p *Parser) comparison() Expr {
 	expr := p.term()
 
 	for p.match(token.GREATER, token.GREATER_EQUAL, token.LESS, token.LESS_EQUAL) {
 		operator := p.previous()
 		right := p.term()
-		expr = ast.NewBinaryExpr(expr, operator, right)
+		expr = NewBinaryExpr(expr, operator, right)
 	}
 
 	return expr
 }
 
-func (p *Parser) term() ast.Expr {
+func (p *Parser) term() Expr {
 	expr := p.factor()
 
 	for p.match(token.MINUS, token.PLUS) {
 		operator := p.previous()
 		right := p.term()
-		expr = ast.NewBinaryExpr(expr, operator, right)
+		expr = NewBinaryExpr(expr, operator, right)
 	}
 
 	return expr
 }
 
-func (p *Parser) factor() ast.Expr {
+func (p *Parser) factor() Expr {
 	expr := p.unary()
 
 	for p.match(token.SLASH, token.STAR) {
 		operator := p.previous()
 		right := p.unary()
-		expr = ast.NewBinaryExpr(expr, operator, right)
+		expr = NewBinaryExpr(expr, operator, right)
 	}
 
 	return expr
 }
 
-func (p *Parser) unary() ast.Expr {
+func (p *Parser) unary() Expr {
 	if p.match(token.BANG, token.MINUS) {
 		operator := p.previous()
 		right := p.unary()
-		return ast.NewUnaryExpr(operator, right)
+		return NewUnaryExpr(operator, right)
 	}
 
 	return p.primary()
 }
 
-func (p *Parser) primary() ast.Expr {
+func (p *Parser) primary() Expr {
 	if p.match(token.FALSE) {
-		return ast.NewLiteralExpr(false)
+		return NewLiteralExpr(false)
 	}
 	if p.match(token.TRUE) {
-		return ast.NewLiteralExpr(true)
+		return NewLiteralExpr(true)
 	}
 	if p.match(token.NIL) {
-		return ast.NewLiteralExpr(nil)
+		return NewLiteralExpr(nil)
 	}
 
 	if p.match(token.NUMBER, token.STRING) {
-		return ast.NewLiteralExpr(p.previous().Literal)
+		return NewLiteralExpr(p.previous().Literal)
+	}
+
+	if p.match(token.IDENTIFIER) {
+		return NewVariableExpr(p.previous())
 	}
 
 	if p.match(token.LEFT_PAREN) {
@@ -147,11 +218,10 @@ func (p *Parser) primary() ast.Expr {
 		if err != nil {
 			errorhandling.ReportAndExit(0, "", "Expect ')' after expression.")
 		}
-		return ast.NewGroupingExpr(expr)
+		return NewGroupingExpr(expr)
 	}
 
-	// may cause problems
-	return nil
+	panic(fmt.Sprintf("error at line %d: unknown token '%s'", p.peek().Line, p.peek().Literal))
 }
 
 func (p *Parser) consume(t token.TokenType, message string) (*token.Token, error) {

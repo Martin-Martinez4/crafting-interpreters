@@ -1,4 +1,4 @@
-package ast
+package parser
 
 import (
 	"fmt"
@@ -33,6 +33,12 @@ func (astp *AstPrinter) VisitLiteral(expr *Literal) any {
 }
 func (astp *AstPrinter) VisitUnary(expr *Unary) any {
 	return astp.parenthesize(expr.Operator.Lexeme, expr.Right)
+}
+func (astp *AstPrinter) VisitVariable(expr *Variable) any {
+	return nil
+}
+func (astp *AstPrinter) VisitAssign(expr *Assign) any {
+	return nil
 }
 
 func (astp *AstPrinter) parenthesize(name string, exprs ...Expr) string {

@@ -51,7 +51,6 @@ func NewScanner(source string) *Scanner {
 }
 
 func (s *Scanner) GetTokens() []token.Token {
-	fmt.Println(len(s.tokens))
 	return s.tokens
 }
 
@@ -161,13 +160,45 @@ func (s *Scanner) scanToken() {
 
 	default:
 		if isDigit(c) {
-			s.handleNumber()
-		} else if IsAlpha(c) {
-			s.identifier()
-		} else {
+			for isDigit(s.peek()) {
+				s.advance()
+			}
 
-			errorhandling.ReportAndExit(s.line, "", "unexpected character.")
+			if s.peek() == '.' && isDigit(s.peekNext()) {
+				s.advance()
+
+				for isDigit(s.peek()) {
+					s.advance()
+				}
+			}
+			number := (s.source[s.start:s.current])
+			f, err := strconv.ParseFloat(number, 64)
+			if err != nil {
+
+			}
+
+			nt := token.NewToken(token.NUMBER, number, f, s.line)
+			s.tokens = append(s.tokens, *nt)
+
+		} else if IsAlpha(c) {
+
+			for isAlphaNumeric(s.peek()) {
+				s.advance()
+			}
+			text := s.source[s.start:s.current]
+			t, ok := (*s.keywords)[text]
+			if !ok {
+				ident := (s.source[s.start:s.current])
+				s.tokens = append(s.tokens, *token.NewToken(token.IDENTIFIER, ident, "", s.line))
+			} else {
+
+				s.tokens = append(s.tokens, *token.NewToken(t, text, "", s.line))
+
+			}
+		} else {
+			fmt.Errorf("unknown character '%v' at line %d", string(c), s.line)
 		}
+
 	}
 
 }
