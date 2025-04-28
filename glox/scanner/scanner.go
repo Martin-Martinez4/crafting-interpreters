@@ -18,6 +18,7 @@ var keywords = map[string]token.TokenType{
 	"true":  token.TRUE,
 	"false": token.FALSE,
 	"while": token.WHILE,
+	"for":   token.FOR,
 
 	"fun":    token.FUN,
 	"return": token.RETURN,

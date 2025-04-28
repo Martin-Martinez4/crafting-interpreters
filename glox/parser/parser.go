@@ -59,6 +59,7 @@ func (p *Parser) statement() Stmt {
 		return p.whileStatement()
 	}
 	if p.match(token.FOR) {
+		fmt.Println("Here")
 		return p.forStatement()
 	}
 	if p.match(token.IF) {
@@ -93,51 +94,43 @@ func (p *Parser) whileStatement() Stmt {
 }
 
 func (p *Parser) forStatement() Stmt {
-	_, err := p.consume(token.LEFT_PAREN, "Expect '(' after while.")
-	if err != nil {
-		panic(err.Error())
-	}
+	p.consume(token.LEFT_PAREN, "Expect '(' after 'for'.")
 
-	var intializer Stmt
+	var initializer Stmt
 	if p.match(token.SEMICOLON) {
-		intializer = nil
+		initializer = nil
 	} else if p.match(token.VAR) {
-		intializer = p.varDeclaration()
+		initializer = p.varDeclaration()
 	} else {
-		intializer = p.expressionStatement()
+		initializer = p.expressionStatement()
 	}
 
-	var condition Expr = nil
+	var condition Expr
 	if !p.check(token.SEMICOLON) {
 		condition = p.expression()
-	}
-	_, err = p.consume(token.SEMICOLON, "Expect ';' after loop condition.")
-	if err != nil {
-		panic(err.Error())
-	}
 
-	var increment Expr = nil
+	}
+	p.consume(token.SEMICOLON, "Expect ';' after loop condition.")
+
+	var increment Expr
 	if !p.check(token.RIGHT_PAREN) {
 		increment = p.expression()
-	}
-	_, err = p.consume(token.RIGHT_PAREN, "Expect ')' after for clause.")
-	if err != nil {
-		panic(err.Error())
-	}
 
+	}
+	p.consume(token.RIGHT_PAREN, "Expect ')' after for clauses.")
 	body := p.statement()
+
 	if increment != nil {
 		body = &BlockStmt{statments: []Stmt{body, &ExprStmt{Expr: increment}}}
 	}
 
 	if condition == nil {
-		condition = NewLiteralExpr(true)
+		condition = &Literal{Value: true}
 	}
+	body = &WhileStmt{body: body, condition: condition}
 
-	body = &WhileStmt{condition: condition, body: body}
-
-	if intializer != nil {
-		body = &BlockStmt{statments: []Stmt{intializer, body}}
+	if initializer != nil {
+		body = &BlockStmt{statments: []Stmt{initializer, body}}
 	}
 
 	return body
