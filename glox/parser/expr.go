@@ -31,6 +31,7 @@ type ExprVisitor interface {
 	VisitUnary(expr *Unary) any
 	VisitVariable(expr *Variable) any
 	VisitAssign(expr *Assign) any
+	VisitLogical(expr *Logical) any
 }
 
 type Binary struct {
@@ -127,4 +128,23 @@ func NewAssignExpr(name *token.Token, value Expr) *Assign {
 
 func (a *Assign) Accept(visitor ExprVisitor) any {
 	return visitor.VisitAssign(a)
+}
+
+type Logical struct {
+	left     Expr
+	operator *token.Token
+	right    Expr
+	defaultStartEnd
+}
+
+func NewLogical(left Expr, operator *token.Token, right Expr) *Logical {
+	return &Logical{
+		left:     left,
+		operator: operator,
+		right:    right,
+	}
+}
+
+func (l *Logical) Accept(visitor ExprVisitor) any {
+	return visitor.VisitLogical(l)
 }

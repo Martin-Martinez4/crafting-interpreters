@@ -78,7 +78,7 @@ func run(source string) {
 	p := parser.NewParser(scanner.GetTokens())
 
 	// for i := 0; i < len(scanner.GetTokens()); i++ {
-	// 	fmt.Printf("error at line %d: unknown token '%s' %s\n", scanner.GetTokens()[i].Line, scanner.GetTokens()[i].Lexeme, scanner.GetTokens()[i].Type)
+	// 	fmt.Printf("line %d: '%s' %s\n", scanner.GetTokens()[i].Line, scanner.GetTokens()[i].Lexeme, scanner.GetTokens()[i].Type)
 	// }
 
 	stmts := p.Parse()

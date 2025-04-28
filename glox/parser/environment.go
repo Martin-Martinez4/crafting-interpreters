@@ -1,6 +1,8 @@
 package parser
 
-import "github.com/Martin-Martinez4/crafting-interpreters/glox/token"
+import (
+	"github.com/Martin-Martinez4/crafting-interpreters/glox/token"
+)
 
 type Environment struct {
 	values    map[string]any
@@ -34,8 +36,8 @@ func (e *Environment) define(name string, value any) {
 func (e *Environment) Assign(name *token.Token, value any) {
 	_, ok := e.values[name.Lexeme]
 	if ok {
-
 		e.define(name.Lexeme, value)
+		return
 	}
 	if e.enclosing != nil {
 		e.enclosing.Assign(name, value)

@@ -40,6 +40,9 @@ func (astp *AstPrinter) VisitVariable(expr *Variable) any {
 func (astp *AstPrinter) VisitAssign(expr *Assign) any {
 	return nil
 }
+func (astp *AstPrinter) VisitLogical(expr *Logical) any {
+	return nil
+}
 
 func (astp *AstPrinter) parenthesize(name string, exprs ...Expr) string {
 	var ss strings.Builder

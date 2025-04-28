@@ -17,14 +17,9 @@ func (i *Interpreter) Interpret(statements []Stmt) {
 	i.environment = NewEnvironment(nil)
 
 	for _, s := range statements {
+		fmt.Println(reflect.TypeOf(s))
 		s.Accept(i)
 
-		// switch s.(type) {
-		// case *PrintStmt:
-		// 	a := s.(*PrintStmt)
-		// 	a.Accept(i)
-
-		// }
 	}
 }
 
@@ -87,6 +82,7 @@ func (i *Interpreter) visitPrintStmt(pstmt *PrintStmt) error {
 }
 
 func (i *Interpreter) visitExpressionStmt(etmt *ExprStmt) error {
+	etmt.Expr.Accept(i)
 	return nil
 }
 
@@ -196,8 +192,41 @@ func isTruthy(object any) bool {
 	return b
 }
 
+func (i *Interpreter) VisitLogical(expr *Logical) any {
+	left := expr.left.Accept(i)
+
+	if expr.operator.Type == token.OR {
+		if isTruthy(left) {
+			return left
+		}
+	} else {
+		if !isTruthy(left) {
+			return left
+		}
+	}
+
+	return expr.right.Accept(i)
+}
+
 func (i *Interpreter) visitBlockStmt(block *BlockStmt) error {
 	i.executeBlock(block.statments, NewEnvironment(i.environment))
+	return nil
+}
+
+func (i *Interpreter) visitIfStmt(ifStmt *IfStmt) error {
+	if isTruthy(ifStmt.condition.Accept(i)) {
+		ifStmt.thenBranch.Accept(i)
+	} else if ifStmt.elseBranch != nil {
+		ifStmt.elseBranch.Accept(i)
+	}
+
+	return nil
+}
+
+func (i *Interpreter) visitWhileStmt(while *WhileStmt) error {
+	for isTruthy(while.condition.Accept(i)) {
+		while.body.Accept(i)
+	}
 	return nil
 }
 
