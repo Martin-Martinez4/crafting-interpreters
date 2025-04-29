@@ -1,42 +1,49 @@
 package parser
 
-import "time"
-
 type LoxCallable interface {
 	Call(interpreter *Interpreter, arguments []any) any
 	arity() int
 }
 
-type Clock struct {
+type Function struct {
+	declaration *FunctionStmt
+	closure     *Environment
 }
 
-func (c *Clock) arity() int {
-	return 0
+func NewFunciton(declaration *FunctionStmt, closure *Environment) *Function {
+	return &Function{
+		declaration: declaration,
+		closure:     closure,
+	}
 }
 
-func (c *Clock) Call(interpreter *Interpreter, arguments []any) any {
-	return time.Now().Unix()
-}
+func (f *Function) Call(interpreter *Interpreter, arguments []any) (returnVal any) {
+	defer func() {
+		if err := recover(); err != nil {
+			if v, ok := err.(Return); ok {
 
-func (c *Clock) String() string {
-	return "<native fn 'clock'> prints the time"
-}
+				returnVal = v.value
+				return
+			}
+			panic(err)
+		}
+	}()
 
-func (f *FunctionStmt) Call(interpreter *Interpreter, arguments []any) any {
-	env := NewEnvironment(interpreter.globals)
+	env := NewEnvironment(f.closure)
 
-	for i := 0; i < len(f.params); i++ {
-		env.define(f.params[i].Lexeme, arguments[i])
+	for i, v := range f.declaration.params {
+		env.define(v.Lexeme, arguments[i])
 	}
 
-	interpreter.executeBlock(f.body, env)
+	interpreter.executeBlock(f.declaration.body, env)
+
 	return nil
 }
 
-func (f *FunctionStmt) arity() int {
-	return len(f.params)
+func (f *Function) arity() int {
+	return len(f.declaration.params)
 }
 
-func (f *FunctionStmt) String() string {
-	return "<fn " + f.name.Lexeme + ">"
+func (f *Function) String() string {
+	return "<fn " + f.declaration.name.Lexeme + ">"
 }

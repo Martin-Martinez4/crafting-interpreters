@@ -83,14 +83,7 @@ func run(source string) {
 
 	stmts := p.Parse()
 
-	// pstmt, ok := stmts[0].(*parser.PrintStmt)
-	// if !ok {
-	// 	panic("Boo")
-	// }
-
-	// fmt.Println(pstmt.Expr)
-
-	i := parser.Interpreter{}
+	i := parser.NewInterpreter(stmts)
 	i.Interpret(stmts)
 
 }

@@ -13,22 +13,26 @@ type Interpreter struct {
 	globals     *Environment
 }
 
+type Return struct {
+	value any
+}
+
 func NewInterpreter(statements []Stmt) *Interpreter {
 	e := NewEnvironment(nil)
+	e.define("clock", &clock{})
 
-	return &Interpreter{
+	i := &Interpreter{
 		Statements:  statements,
 		environment: e,
 		globals:     e,
 	}
+
+	return i
 }
 
 func (i *Interpreter) Interpret(statements []Stmt) {
 
-	i.globals.define("clock", Clock{})
-
 	for _, s := range statements {
-		fmt.Println(reflect.TypeOf(s))
 		s.Accept(i)
 
 	}
@@ -47,7 +51,7 @@ func (i *Interpreter) VisitLiteral(expr *Literal) any {
 }
 
 func (i *Interpreter) VisitGrouping(expr *Grouping) any {
-	return expr.Accept(i)
+	return expr.Expression.Accept(i)
 }
 
 func (i *Interpreter) VisitUnary(expr *Unary) any {
@@ -76,7 +80,7 @@ func (i *Interpreter) VisitVariable(expr *Variable) any {
 	return i.environment.Get(expr.name)
 }
 
-func (i *Interpreter) visitVariableStmt(vstmt *VarStmt) error {
+func (i *Interpreter) visitVariableStmt(vstmt *VarStmt) any {
 	var value any = nil
 	if vstmt.initializer != nil {
 		value = vstmt.initializer.Accept(i)
@@ -86,13 +90,13 @@ func (i *Interpreter) visitVariableStmt(vstmt *VarStmt) error {
 	return nil
 }
 
-func (i *Interpreter) visitPrintStmt(pstmt *PrintStmt) error {
+func (i *Interpreter) visitPrintStmt(pstmt *PrintStmt) any {
 	value := pstmt.Expr.Accept(i)
 	fmt.Println(value)
 	return nil
 }
 
-func (i *Interpreter) visitExpressionStmt(etmt *ExprStmt) error {
+func (i *Interpreter) visitExpressionStmt(etmt *ExprStmt) any {
 	etmt.Expr.Accept(i)
 	return nil
 }
@@ -202,7 +206,7 @@ func (i *Interpreter) VisitCall(expr *CallExpr) any {
 		}
 		return c.Call(i, arguments)
 	} else {
-		panic("tried to call uncallable object; can only call functions and classes")
+		panic(fmt.Sprintf("tried to call uncallable object %s; can only call functions and classes", reflect.TypeOf(callee)))
 	}
 }
 
@@ -240,12 +244,12 @@ func (i *Interpreter) VisitLogical(expr *Logical) any {
 	return expr.right.Accept(i)
 }
 
-func (i *Interpreter) visitBlockStmt(block *BlockStmt) error {
+func (i *Interpreter) visitBlockStmt(block *BlockStmt) any {
 	i.executeBlock(block.statments, NewEnvironment(i.environment))
 	return nil
 }
 
-func (i *Interpreter) visitIfStmt(ifStmt *IfStmt) error {
+func (i *Interpreter) visitIfStmt(ifStmt *IfStmt) any {
 	if isTruthy(ifStmt.condition.Accept(i)) {
 		ifStmt.thenBranch.Accept(i)
 	} else if ifStmt.elseBranch != nil {
@@ -255,23 +259,40 @@ func (i *Interpreter) visitIfStmt(ifStmt *IfStmt) error {
 	return nil
 }
 
-func (i *Interpreter) visitWhileStmt(while *WhileStmt) error {
+func (i *Interpreter) visitWhileStmt(while *WhileStmt) any {
 	for isTruthy(while.condition.Accept(i)) {
 		while.body.Accept(i)
 	}
 	return nil
 }
 
-func (i *Interpreter) visitFunctionStmt(fun *FunctionStmt) error {
-	i.environment.define(fun.name.Lexeme, fun)
+func (i *Interpreter) visitFunctionStmt(fun *FunctionStmt) any {
+	f := NewFunciton(fun, i.environment)
+	i.environment.define(fun.name.Lexeme, f)
 	return nil
 }
 
-func (i *Interpreter) visitReturnStmt(r *ReturnStmt) error {
-	r.value.Accept(i)
+func (i *Interpreter) visitReturnStmt(r *ReturnStmt) any {
+
+	// var v Expr = nil
+	// if r.value != nil {
+	// 	e, ok := r.value.Accept(i).(Expr)
+	// 	if !ok {
+	// 		panic("cast to Expr failed in visitReturnStmt")
+	// 	}
+	// 	v = e
+	// }
+
+	// return &ReturnStmt{value: v}
+	var value any
+	if r.value != nil {
+		value = r.value.Accept(i)
+	}
+	panic(Return{value: value})
+
 }
 
-func (i *Interpreter) executeBlock(statements []Stmt, env *Environment) {
+func (i *Interpreter) executeBlock(statements []Stmt, env *Environment) any {
 	prev := i.environment
 	defer func() {
 		i.environment = prev
@@ -279,9 +300,11 @@ func (i *Interpreter) executeBlock(statements []Stmt, env *Environment) {
 
 	i.environment = env
 	for _, statement := range statements {
-		// fmt.Println(statement)
+
 		statement.Accept(i)
 	}
+
+	return nil
 }
 
 func isEqual(a any, b any) bool {

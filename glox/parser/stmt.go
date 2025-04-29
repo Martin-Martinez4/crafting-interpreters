@@ -3,25 +3,25 @@ package parser
 import "github.com/Martin-Martinez4/crafting-interpreters/glox/token"
 
 type Stmt interface {
-	Accept(StmtVisitor) error
+	Accept(StmtVisitor) any
 }
 
 type StmtVisitor interface {
-	visitPrintStmt(*PrintStmt) error
-	visitExpressionStmt(*ExprStmt) error
-	visitVariableStmt(*VarStmt) error
-	visitBlockStmt(*BlockStmt) error
-	visitIfStmt(*IfStmt) error
-	visitWhileStmt(*WhileStmt) error
-	visitFunctionStmt(*FunctionStmt) error
-	visitReturnStmt(*ReturnStmt) error
+	visitPrintStmt(*PrintStmt) any
+	visitExpressionStmt(*ExprStmt) any
+	visitVariableStmt(*VarStmt) any
+	visitBlockStmt(*BlockStmt) any
+	visitIfStmt(*IfStmt) any
+	visitWhileStmt(*WhileStmt) any
+	visitFunctionStmt(*FunctionStmt) any
+	visitReturnStmt(*ReturnStmt) any
 }
 
 type PrintStmt struct {
 	Expr
 }
 
-func (p *PrintStmt) Accept(v StmtVisitor) error {
+func (p *PrintStmt) Accept(v StmtVisitor) any {
 	return v.visitPrintStmt(p)
 }
 
@@ -29,7 +29,7 @@ type ExprStmt struct {
 	Expr
 }
 
-func (e *ExprStmt) Accept(v StmtVisitor) error {
+func (e *ExprStmt) Accept(v StmtVisitor) any {
 	return v.visitExpressionStmt(e)
 }
 
@@ -38,7 +38,7 @@ type VarStmt struct {
 	initializer Expr
 }
 
-func (vs *VarStmt) Accept(v StmtVisitor) error {
+func (vs *VarStmt) Accept(v StmtVisitor) any {
 	return v.visitVariableStmt(vs)
 }
 
@@ -46,7 +46,7 @@ type BlockStmt struct {
 	statments []Stmt
 }
 
-func (vb *BlockStmt) Accept(v StmtVisitor) error {
+func (vb *BlockStmt) Accept(v StmtVisitor) any {
 	return v.visitBlockStmt(vb)
 }
 
@@ -56,7 +56,7 @@ type IfStmt struct {
 	elseBranch Stmt
 }
 
-func (i *IfStmt) Accept(v StmtVisitor) error {
+func (i *IfStmt) Accept(v StmtVisitor) any {
 	return v.visitIfStmt(i)
 }
 
@@ -65,7 +65,7 @@ type WhileStmt struct {
 	body      Stmt
 }
 
-func (w *WhileStmt) Accept(v StmtVisitor) error {
+func (w *WhileStmt) Accept(v StmtVisitor) any {
 	return v.visitWhileStmt(w)
 }
 
@@ -75,7 +75,7 @@ type FunctionStmt struct {
 	body   []Stmt
 }
 
-func (f *FunctionStmt) Accept(v StmtVisitor) error {
+func (f *FunctionStmt) Accept(v StmtVisitor) any {
 	return v.visitFunctionStmt(f)
 }
 
@@ -84,10 +84,7 @@ type ReturnStmt struct {
 	value   Expr
 }
 
-func (r *ReturnStmt) Accept(v StmtVisitor) error {
-	var value any
-
-	if r.value != nil {
-		value = r.value.Accept(v)
-	}
+func (r *ReturnStmt) Accept(v StmtVisitor) any {
+	v.visitReturnStmt(r)
+	return nil
 }

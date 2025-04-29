@@ -110,7 +110,6 @@ func (p *Parser) statement() Stmt {
 		return p.whileStatement()
 	}
 	if p.match(token.FOR) {
-		fmt.Println("Here")
 		return p.forStatement()
 	}
 	if p.match(token.IF) {
@@ -118,6 +117,9 @@ func (p *Parser) statement() Stmt {
 	}
 	if p.match(token.PRINT) {
 		return p.printStatement()
+	}
+	if p.match(token.RETURN) {
+		return p.returnStatement()
 	}
 	if p.match(token.LEFT_BRACE) {
 		return &BlockStmt{p.block()}
@@ -409,12 +411,12 @@ func (p *Parser) finishCall(callee Expr) Expr {
 	arguments := []Expr{}
 
 	if !p.check(token.RIGHT_PAREN) {
+		if len(arguments) >= 255 {
+			panic("called function with more than 254 arguments")
+		}
 		arguments = append(arguments, p.expression())
 
 		for p.match(token.COMMA) {
-			if len(arguments) >= 255 {
-				panic("called function with more than 254 arguments")
-			}
 			arguments = append(arguments, p.expression())
 
 		}
