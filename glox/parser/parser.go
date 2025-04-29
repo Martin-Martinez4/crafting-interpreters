@@ -30,10 +30,61 @@ func (p *Parser) Parse() []Stmt {
 }
 
 func (p *Parser) declaration() Stmt {
+	if p.match(token.FUN) {
+		return p.function("function")
+	}
 	if p.match(token.VAR) {
 		return p.varDeclaration()
 	}
 	return p.statement()
+}
+
+func (p *Parser) function(kind string) *FunctionStmt {
+	name, err := p.consume(token.IDENTIFIER, "Expect "+kind+" name.")
+	if err != nil {
+		panic(err.Error())
+	}
+
+	_, err = p.consume(token.LEFT_PAREN, "Expect '(' after"+kind+" name.")
+	if err != nil {
+		panic(err.Error())
+	}
+
+	parameters := []*token.Token{}
+
+	if !p.check(token.RIGHT_PAREN) {
+		if len(parameters) >= 255 {
+			panic(fmt.Sprintf("%v cannot have more than 255 parameters.", p.peek()))
+		}
+		tt, err := p.consume(token.IDENTIFIER, "Expect parameter name.")
+		if err != nil {
+			panic(err.Error())
+		}
+		parameters = append(parameters, tt)
+
+		for p.match(token.COMMA) {
+			if len(parameters) >= 255 {
+				panic(fmt.Sprintf("%v cannot have more than 255 parameters.", p.peek()))
+			}
+			tt, err := p.consume(token.IDENTIFIER, "Expect parameter name.")
+			if err != nil {
+				panic(err.Error())
+			}
+			parameters = append(parameters, tt)
+		}
+	}
+
+	_, err = p.consume(token.RIGHT_PAREN, "Expect ')' after parameters.")
+	if err != nil {
+		panic(err.Error())
+	}
+	_, err = p.consume(token.LEFT_BRACE, "Expect '{' before"+kind+" body.")
+	if err != nil {
+		panic(err.Error())
+	}
+	body := p.block()
+	return &FunctionStmt{name: name, params: parameters, body: body}
+
 }
 
 func (p *Parser) varDeclaration() Stmt {
@@ -321,7 +372,44 @@ func (p *Parser) unary() Expr {
 		return NewUnaryExpr(operator, right)
 	}
 
-	return p.primary()
+	return p.call()
+}
+
+func (p *Parser) call() Expr {
+	expr := p.primary()
+
+	for {
+		if p.match(token.LEFT_PAREN) {
+			expr = p.finishCall(expr)
+		} else {
+			break
+		}
+	}
+
+	return expr
+}
+
+func (p *Parser) finishCall(callee Expr) Expr {
+	arguments := []Expr{}
+
+	if !p.check(token.RIGHT_PAREN) {
+		arguments = append(arguments, p.expression())
+
+		for p.match(token.COMMA) {
+			if len(arguments) >= 255 {
+				panic("called function with more than 254 arguments")
+			}
+			arguments = append(arguments, p.expression())
+
+		}
+	}
+
+	paren, err := p.consume(token.RIGHT_PAREN, "Expect ')' after arguments.")
+	if err != nil {
+		panic(err.Error())
+	}
+
+	return NewCallExpr(callee, paren, arguments)
 }
 
 func (p *Parser) primary() Expr {

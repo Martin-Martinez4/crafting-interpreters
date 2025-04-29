@@ -10,11 +10,22 @@ import (
 type Interpreter struct {
 	Statements  []Stmt
 	environment *Environment
+	globals     *Environment
+}
+
+func NewInterpreter(statements []Stmt) *Interpreter {
+	e := NewEnvironment(nil)
+
+	return &Interpreter{
+		Statements:  statements,
+		environment: e,
+		globals:     e,
+	}
 }
 
 func (i *Interpreter) Interpret(statements []Stmt) {
 
-	i.environment = NewEnvironment(nil)
+	i.globals.define("clock", Clock{})
 
 	for _, s := range statements {
 		fmt.Println(reflect.TypeOf(s))
@@ -174,6 +185,27 @@ func (i *Interpreter) VisitBinary(expr *Binary) any {
 
 }
 
+func (i *Interpreter) VisitCall(expr *CallExpr) any {
+	callee := expr.callee.Accept(i)
+
+	arguments := []any{}
+	for _, arg := range expr.arguments {
+
+		arguments = append(arguments, arg.Accept(i))
+	}
+
+	c, ok := callee.(LoxCallable)
+	if ok {
+		if len(arguments) != c.arity() {
+
+			panic(fmt.Sprintf("%v Expected %d arguments but got %d", expr.paren, c.arity(), len(arguments)))
+		}
+		return c.Call(i, arguments)
+	} else {
+		panic("tried to call uncallable object; can only call functions and classes")
+	}
+}
+
 func (i *Interpreter) VisitAssign(expr *Assign) any {
 	value := expr.value.Accept(i)
 	i.environment.Assign(expr.name, value)
@@ -227,6 +259,10 @@ func (i *Interpreter) visitWhileStmt(while *WhileStmt) error {
 	for isTruthy(while.condition.Accept(i)) {
 		while.body.Accept(i)
 	}
+	return nil
+}
+
+func (i *Interpreter) visitFunctionStmt(fun *FunctionStmt) error {
 	return nil
 }
 

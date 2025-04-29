@@ -13,6 +13,7 @@ type StmtVisitor interface {
 	visitBlockStmt(*BlockStmt) error
 	visitIfStmt(*IfStmt) error
 	visitWhileStmt(*WhileStmt) error
+	visitFunctionStmt(*FunctionStmt) error
 }
 
 type PrintStmt struct {
@@ -65,4 +66,14 @@ type WhileStmt struct {
 
 func (w *WhileStmt) Accept(v StmtVisitor) error {
 	return v.visitWhileStmt(w)
+}
+
+type FunctionStmt struct {
+	name   *token.Token
+	params []*token.Token
+	body   []Stmt
+}
+
+func (f *FunctionStmt) Accept(v StmtVisitor) error {
+	return v.visitFunctionStmt(f)
 }

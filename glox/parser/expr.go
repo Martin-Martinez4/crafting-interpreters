@@ -32,6 +32,7 @@ type ExprVisitor interface {
 	VisitVariable(expr *Variable) any
 	VisitAssign(expr *Assign) any
 	VisitLogical(expr *Logical) any
+	VisitCall(expr *CallExpr) any
 }
 
 type Binary struct {
@@ -51,6 +52,25 @@ func NewBinaryExpr(left Expr, operator *token.Token, right Expr) *Binary {
 
 func (b *Binary) Accept(visitor ExprVisitor) any {
 	return visitor.VisitBinary(b)
+}
+
+type CallExpr struct {
+	callee    Expr
+	paren     *token.Token
+	arguments []Expr
+	defaultStartEnd
+}
+
+func NewCallExpr(callee Expr, paren *token.Token, arguments []Expr) *CallExpr {
+	return &CallExpr{
+		callee:    callee,
+		paren:     paren,
+		arguments: arguments,
+	}
+}
+
+func (ce *CallExpr) Accept(visitor ExprVisitor) any {
+	return visitor.VisitCall(ce)
 }
 
 type Grouping struct {
