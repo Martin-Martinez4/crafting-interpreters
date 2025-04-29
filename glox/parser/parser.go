@@ -211,6 +211,22 @@ func (p *Parser) ifStatement() Stmt {
 	return &IfStmt{condition: condition, thenBranch: thenBranch, elseBranch: elseBranch}
 }
 
+func (p *Parser) returnStatement() Stmt {
+	keyword := p.previous()
+	var value Expr = nil
+
+	if !p.check(token.SEMICOLON) {
+		value = p.expression()
+	}
+
+	_, err := p.consume(token.SEMICOLON, "Expect ';' after return value.")
+	if err != nil {
+		panic(err.Error())
+	}
+
+	return &ReturnStmt{keyword: keyword, value: value}
+}
+
 func (p *Parser) printStatement() Stmt {
 	value := p.expression()
 	_, err := p.consume(token.SEMICOLON, "Expect ';' after value.")

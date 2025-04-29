@@ -263,7 +263,12 @@ func (i *Interpreter) visitWhileStmt(while *WhileStmt) error {
 }
 
 func (i *Interpreter) visitFunctionStmt(fun *FunctionStmt) error {
+	i.environment.define(fun.name.Lexeme, fun)
 	return nil
+}
+
+func (i *Interpreter) visitReturnStmt(r *ReturnStmt) error {
+	r.value.Accept(i)
 }
 
 func (i *Interpreter) executeBlock(statements []Stmt, env *Environment) {

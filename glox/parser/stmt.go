@@ -14,6 +14,7 @@ type StmtVisitor interface {
 	visitIfStmt(*IfStmt) error
 	visitWhileStmt(*WhileStmt) error
 	visitFunctionStmt(*FunctionStmt) error
+	visitReturnStmt(*ReturnStmt) error
 }
 
 type PrintStmt struct {
@@ -76,4 +77,17 @@ type FunctionStmt struct {
 
 func (f *FunctionStmt) Accept(v StmtVisitor) error {
 	return v.visitFunctionStmt(f)
+}
+
+type ReturnStmt struct {
+	keyword *token.Token
+	value   Expr
+}
+
+func (r *ReturnStmt) Accept(v StmtVisitor) error {
+	var value any
+
+	if r.value != nil {
+		value = r.value.Accept(v)
+	}
 }
