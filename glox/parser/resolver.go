@@ -1,14 +1,28 @@
 package parser
 
 import (
-	"fmt"
-
 	"github.com/Martin-Martinez4/crafting-interpreters/glox/token"
 )
 
+type functionType int
+
+const (
+	none functionType = iota
+	function
+)
+
 type Resolver struct {
-	Interpreter
+	*Interpreter
 	*scopes
+	currentFunction functionType
+}
+
+func NewResolver(interpreter *Interpreter) *Resolver {
+	return &Resolver{
+		Interpreter:     interpreter,
+		scopes:          &scopes{},
+		currentFunction: none,
+	}
 }
 
 type scope = map[string]bool
@@ -27,22 +41,18 @@ func (s *scopes) pop() {
 }
 
 func (r *Resolver) resolveLocal(expr Expr, name *token.Token) {
-	for i, sc := range *r.scopes {
-		_, ok := (*sc)[name.Lexeme]
-		if ok {
-			r.Resolve(expr, len(*r.scopes)-1-i)
+	for i := len(*r.scopes) - 1; i >= 0; i-- {
+		s := (*r.scopes)[i]
+		if _, defined := (*s)[name.Lexeme]; defined {
+			depth := len(*r.scopes) - 1 - i
+			r.Interpreter.Resolve(expr, depth)
+			// s.use(name.Lexeme)
 			return
 		}
 	}
-
-	return
 }
 
-func (i *Interpreter) Resolve(expr Expr, depth int) {
-	i.locals[fmt.Sprintf("%v", expr)] = depth
-}
-
-func (r *Resolver) resolveStmts(stmts []Stmt) {
+func (r *Resolver) ResolveStmts(stmts []Stmt) {
 	for _, s := range stmts {
 		r.resolveStmt(s)
 	}
@@ -89,7 +99,7 @@ func (r *Resolver) define(name *token.Token) {
 
 func (r *Resolver) visitBlockStmt(bs *BlockStmt) any {
 	r.beginScope()
-	r.resolveStmts(bs.statments)
+	r.ResolveStmts(bs.statments)
 	r.endScope()
 	return nil
 }
@@ -104,9 +114,11 @@ func (r *Resolver) visitVariableStmt(vs *VarStmt) any {
 }
 
 func (r *Resolver) VisitVariable(expr *Variable) any {
-	v, _ := (*r.scopes.peek())[expr.name.Lexeme]
-	if (len(*r.scopes) > 0) && v == false {
-		panic("cannot read local variable in its own initializer")
+
+	if len(*r.scopes) > 0 {
+		if declared, defined := (*r.scopes.peek())[expr.name.Lexeme]; declared && !defined {
+			panic("cannot read local variable in its own initializer")
+		}
 	}
 
 	r.resolveLocal(expr, expr.name)
@@ -121,19 +133,24 @@ func (r *Resolver) VisitAssign(expr *Assign) any {
 
 func (r *Resolver) visitFunctionStmt(fs *FunctionStmt) any {
 	r.declare(fs.name)
-	r.define(fs.name)
-	r.resolveFunction(fs)
+	// r.define(fs.name)
+	r.resolveFunction(fs, function)
 	return nil
 }
 
-func (r *Resolver) resolveFunction(fs *FunctionStmt) {
+func (r *Resolver) resolveFunction(fs *FunctionStmt, ft functionType) {
+	enclosingFunction := r.currentFunction
+	r.currentFunction = ft
+
 	r.beginScope()
 	for _, param := range fs.params {
 		r.declare(param)
 		r.define(param)
 	}
-	r.resolveStmts(fs.body)
+	r.ResolveStmts(fs.body)
 	r.endScope()
+
+	r.currentFunction = enclosingFunction
 }
 
 func (r *Resolver) visitExpressionStmt(stmt *ExprStmt) any {
@@ -156,6 +173,9 @@ func (r *Resolver) visitPrintStmt(stmt *PrintStmt) any {
 }
 
 func (r *Resolver) visitReturnStmt(stmt *ReturnStmt) any {
+	if r.currentFunction == none {
+		panic("cannot return from top-level code.")
+	}
 	if stmt.value != nil {
 		r.resolveExpr(stmt.value)
 	}
@@ -189,5 +209,22 @@ func (r *Resolver) VisitGrouping(expr *Grouping) any {
 }
 
 func (r *Resolver) VisitLiteral(expr *Literal) any {
+	return nil
+}
+
+func (r *Resolver) VisitLogical(expr *Logical) any {
+	r.resolveExpr(expr.left)
+	r.resolveExpr(expr.right)
+	return nil
+}
+
+func (r *Resolver) VisitUnary(expr *Unary) any {
+	r.resolveExpr(expr.Right)
+	return nil
+}
+
+func (r *Resolver) visitClassStmt(stmt *ClassStmt) any {
+	r.declare(stmt.name)
+	r.define(stmt.name)
 	return nil
 }

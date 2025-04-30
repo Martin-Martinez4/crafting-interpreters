@@ -15,6 +15,7 @@ type StmtVisitor interface {
 	visitWhileStmt(*WhileStmt) any
 	visitFunctionStmt(*FunctionStmt) any
 	visitReturnStmt(*ReturnStmt) any
+	visitClassStmt(*ClassStmt) any
 }
 
 type PrintStmt struct {
@@ -87,4 +88,13 @@ type ReturnStmt struct {
 func (r *ReturnStmt) Accept(v StmtVisitor) any {
 	v.visitReturnStmt(r)
 	return nil
+}
+
+type ClassStmt struct {
+	name    *token.Token
+	methods []*FunctionStmt
+}
+
+func (c *ClassStmt) Accept(v StmtVisitor) any {
+	return v.visitClassStmt(c)
 }

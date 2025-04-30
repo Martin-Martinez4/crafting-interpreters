@@ -84,6 +84,10 @@ func run(source string) {
 	stmts := p.Parse()
 
 	i := parser.NewInterpreter(stmts)
+
+	r := parser.NewResolver(i)
+	r.ResolveStmts(stmts)
+
 	i.Interpret(stmts)
 
 }

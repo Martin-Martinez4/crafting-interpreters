@@ -26,6 +26,7 @@ func NewInterpreter(statements []Stmt) *Interpreter {
 		Statements:  statements,
 		environment: e,
 		globals:     e,
+		locals:      map[string]int{},
 	}
 
 	return i
@@ -37,6 +38,10 @@ func (i *Interpreter) Interpret(statements []Stmt) {
 		s.Accept(i)
 
 	}
+}
+
+func (i *Interpreter) Resolve(expr Expr, depth int) {
+	i.locals[fmt.Sprintf("%v", expr)] = depth
 }
 
 func stringify(object any) string {
@@ -78,7 +83,33 @@ func (i *Interpreter) VisitUnary(expr *Unary) any {
 }
 
 func (i *Interpreter) VisitVariable(expr *Variable) any {
-	return i.environment.Get(expr.name)
+	return i.lookUpVariable(expr.name, expr)
+}
+
+func (i *Interpreter) lookUpVariable(name *token.Token, expr Expr) any {
+	distance, ok := i.locals[fmt.Sprintf("%v", expr)]
+	if !ok {
+		return i.globals.Get(name)
+	} else {
+		return i.environment.getAt(distance, name.Lexeme)
+	}
+}
+
+func (e *Environment) getAt(distance int, name string) any {
+	v, ok := e.ancestor(distance).values[name]
+	if !ok {
+		panic("Not found")
+	}
+	return v
+}
+
+func (e *Environment) ancestor(distance int) *Environment {
+	env := e
+	for i := 0; i < distance; i++ {
+		env = env.enclosing
+	}
+
+	return env
 }
 
 func (i *Interpreter) visitVariableStmt(vstmt *VarStmt) any {
@@ -213,6 +244,15 @@ func (i *Interpreter) VisitCall(expr *CallExpr) any {
 
 func (i *Interpreter) VisitAssign(expr *Assign) any {
 	value := expr.value.Accept(i)
+
+	distance, ok := i.locals[fmt.Sprintf("%v", expr)]
+	if !ok {
+		i.globals.Assign(expr.name, value)
+
+	} else {
+		i.environment.AssignAt(distance, expr.name, value)
+	}
+
 	i.environment.Assign(expr.name, value)
 	return value
 }

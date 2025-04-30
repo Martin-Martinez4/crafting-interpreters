@@ -47,3 +47,7 @@ func (e *Environment) Assign(name *token.Token, value any) {
 	}
 
 }
+
+func (e *Environment) AssignAt(distance int, name *token.Token, value any) {
+	e.ancestor(distance).values[name.Lexeme] = value
+}
