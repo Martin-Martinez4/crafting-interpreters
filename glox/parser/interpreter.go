@@ -11,6 +11,7 @@ type Interpreter struct {
 	Statements  []Stmt
 	environment *Environment
 	globals     *Environment
+	locals      map[string]int
 }
 
 type Return struct {
