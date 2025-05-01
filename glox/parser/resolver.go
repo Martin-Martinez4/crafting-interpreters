@@ -9,6 +9,7 @@ type functionType int
 const (
 	none functionType = iota
 	function
+	method
 )
 
 type Resolver struct {
@@ -226,5 +227,21 @@ func (r *Resolver) VisitUnary(expr *Unary) any {
 func (r *Resolver) visitClassStmt(stmt *ClassStmt) any {
 	r.declare(stmt.name)
 	r.define(stmt.name)
+
+	for _, m := range stmt.methods {
+		r.resolveFunction(m, method)
+	}
+
+	return nil
+}
+
+func (r *Resolver) VisitGet(expr *Get) any {
+	r.resolveExpr(expr.object)
+	return nil
+}
+
+func (r *Resolver) VisitSet(expr *Set) any {
+	r.resolveExpr(expr.value)
+	r.resolveExpr(expr.object)
 	return nil
 }

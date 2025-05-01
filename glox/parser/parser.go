@@ -73,7 +73,7 @@ func (p *Parser) function(kind string) *FunctionStmt {
 		panic(err.Error())
 	}
 
-	_, err = p.consume(token.LEFT_PAREN, "Expect '(' after"+kind+" name.")
+	_, err = p.consume(token.LEFT_PAREN, "Expect '(' after "+kind+" name.")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -287,11 +287,13 @@ func (p *Parser) assignment() Expr {
 		value := p.assignment()
 
 		e, ok := expr.(*Variable)
-		if !ok {
-			panic(equals.Lexeme + " invalid assignment target.")
+		if ok {
+			return NewAssignExpr(e.name, value)
+		} else if v, ok := expr.(*Get); ok {
+			return &Set{object: v.object, name: v.name, value: value}
 		}
 
-		return NewAssignExpr(e.name, value)
+		panic(equals.Lexeme + " invalid assignment target.")
 
 	}
 
@@ -427,6 +429,12 @@ func (p *Parser) call() Expr {
 	for {
 		if p.match(token.LEFT_PAREN) {
 			expr = p.finishCall(expr)
+		} else if p.match(token.DOT) {
+			name, err := p.consume(token.IDENTIFIER, "Expect property name after '.'.")
+			if err != nil {
+				panic(err.Error())
+			}
+			expr = &Get{object: expr, name: name}
 		} else {
 			break
 		}

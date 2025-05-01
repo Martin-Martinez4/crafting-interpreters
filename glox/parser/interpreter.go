@@ -241,6 +241,16 @@ func (i *Interpreter) VisitCall(expr *CallExpr) any {
 		panic(fmt.Sprintf("tried to call uncallable object %s; can only call functions and classes", reflect.TypeOf(callee)))
 	}
 }
+func (i *Interpreter) VisitGet(expr *Get) any {
+	obj := expr.object.Accept(i)
+
+	o, ok := obj.(*LoxInstance)
+	if !ok {
+		panic("only instances have properties")
+	}
+
+	return o.Get(expr.name)
+}
 
 func (i *Interpreter) VisitAssign(expr *Assign) any {
 	value := expr.value.Accept(i)
@@ -285,6 +295,19 @@ func (i *Interpreter) VisitLogical(expr *Logical) any {
 	return expr.right.Accept(i)
 }
 
+func (i *Interpreter) VisitSet(expr *Set) any {
+	object := expr.object.Accept(i)
+
+	o, ok := object.(*LoxInstance)
+	if !ok {
+		panic(expr.name.Lexeme + " only instances have fields.")
+	}
+
+	value := expr.value.Accept(i)
+	o.Set(expr.name, value)
+	return nil
+}
+
 func (i *Interpreter) visitBlockStmt(block *BlockStmt) any {
 	i.executeBlock(block.statments, NewEnvironment(i.environment))
 	return nil
@@ -297,6 +320,19 @@ func (i *Interpreter) visitIfStmt(ifStmt *IfStmt) any {
 		ifStmt.elseBranch.Accept(i)
 	}
 
+	return nil
+}
+
+func (i *Interpreter) visitClassStmt(cStmt *ClassStmt) any {
+	i.environment.define(cStmt.name.Lexeme, nil)
+
+	methods := map[string]*Function{}
+	for _, m := range cStmt.methods {
+		methods[m.name.Lexeme] = NewFunciton(m, i.environment)
+	}
+
+	class := NewClass(cStmt.name.Lexeme, methods)
+	i.environment.Assign(cStmt.name, class)
 	return nil
 }
 

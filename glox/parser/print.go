@@ -46,6 +46,12 @@ func (astp *AstPrinter) VisitLogical(expr *Logical) any {
 func (astp *AstPrinter) VisitCall(expr *CallExpr) any {
 	return nil
 }
+func (astp *AstPrinter) VisitGet(expr *Get) any {
+	return nil
+}
+func (astp *AstPrinter) VisitSet(expr *Set) any {
+	return nil
+}
 
 func (astp *AstPrinter) parenthesize(name string, exprs ...Expr) string {
 	var ss strings.Builder

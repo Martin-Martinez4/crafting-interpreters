@@ -48,7 +48,7 @@ func main() {
 
 	lenArgs := len(args)
 
-	fmt.Println(args)
+	// fmt.Println(args)
 
 	if lenArgs > 1 {
 		println("Usage: glox [script]")

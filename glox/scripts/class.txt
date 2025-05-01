@@ -1,0 +1,18 @@
+class Bacon {
+    eat(){
+        print "Crunch";
+        return 20 + 5;
+    }
+
+}
+
+var e = Bacon().eat;
+e();
+
+Bacon().t = "test";
+
+var b = Bacon()
+
+b.t = "test";
+print b.t;
+
