@@ -35,6 +35,7 @@ type ExprVisitor interface {
 	VisitCall(expr *CallExpr) any
 	VisitGet(expr *Get) any
 	VisitSet(expr *Set) any
+	VisitThis(expr *This) any
 }
 
 type Binary struct {
@@ -120,6 +121,15 @@ func NewUnaryExpr(operator *token.Token, right Expr) *Unary {
 
 func (u *Unary) Accept(visitor ExprVisitor) any {
 	return visitor.VisitUnary(u)
+}
+
+type This struct {
+	keyword *token.Token
+	defaultStartEnd
+}
+
+func (t *This) Accept(visitor ExprVisitor) any {
+	return visitor.VisitThis(t)
 }
 
 type Variable struct {

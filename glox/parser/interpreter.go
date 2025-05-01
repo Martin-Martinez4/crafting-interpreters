@@ -328,7 +328,7 @@ func (i *Interpreter) visitClassStmt(cStmt *ClassStmt) any {
 
 	methods := map[string]*Function{}
 	for _, m := range cStmt.methods {
-		methods[m.name.Lexeme] = NewFunciton(m, i.environment)
+		methods[m.name.Lexeme] = NewFunciton(m, i.environment, m.name.Lexeme == "this")
 	}
 
 	class := NewClass(cStmt.name.Lexeme, methods)
@@ -344,7 +344,7 @@ func (i *Interpreter) visitWhileStmt(while *WhileStmt) any {
 }
 
 func (i *Interpreter) visitFunctionStmt(fun *FunctionStmt) any {
-	f := NewFunciton(fun, i.environment)
+	f := NewFunciton(fun, i.environment, false)
 	i.environment.define(fun.name.Lexeme, f)
 	return nil
 }
@@ -367,6 +367,10 @@ func (i *Interpreter) visitReturnStmt(r *ReturnStmt) any {
 	}
 	panic(Return{value: value})
 
+}
+
+func (i *Interpreter) VisitThis(expr *This) any {
+	return i.lookUpVariable(expr.keyword, expr)
 }
 
 func (i *Interpreter) executeBlock(statements []Stmt, env *Environment) any {

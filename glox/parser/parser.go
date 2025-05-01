@@ -481,6 +481,10 @@ func (p *Parser) primary() Expr {
 		return NewLiteralExpr(p.previous().Literal)
 	}
 
+	if p.match(token.THIS) {
+		return &This{keyword: p.previous()}
+	}
+
 	if p.match(token.IDENTIFIER) {
 		return NewVariableExpr(p.previous())
 	}

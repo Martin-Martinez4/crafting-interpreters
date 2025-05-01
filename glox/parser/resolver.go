@@ -9,6 +9,7 @@ type functionType int
 const (
 	none functionType = iota
 	function
+	initializer
 	method
 )
 
@@ -16,6 +17,7 @@ type Resolver struct {
 	*Interpreter
 	*scopes
 	currentFunction functionType
+	currentClass    classType
 }
 
 func NewResolver(interpreter *Interpreter) *Resolver {
@@ -23,6 +25,7 @@ func NewResolver(interpreter *Interpreter) *Resolver {
 		Interpreter:     interpreter,
 		scopes:          &scopes{},
 		currentFunction: none,
+		currentClass:    NONE,
 	}
 }
 
@@ -178,6 +181,10 @@ func (r *Resolver) visitReturnStmt(stmt *ReturnStmt) any {
 		panic("cannot return from top-level code.")
 	}
 	if stmt.value != nil {
+		if r.currentFunction == initializer {
+			panic("cannot return from init.")
+
+		}
 		r.resolveExpr(stmt.value)
 	}
 	return nil
@@ -225,12 +232,29 @@ func (r *Resolver) VisitUnary(expr *Unary) any {
 }
 
 func (r *Resolver) visitClassStmt(stmt *ClassStmt) any {
+	cc := r.currentClass
+	r.currentClass = CLASS
+
 	r.declare(stmt.name)
 	r.define(stmt.name)
 
+	r.beginScope()
+	(*r.scopes.peek())["this"] = true
+
 	for _, m := range stmt.methods {
-		r.resolveFunction(m, method)
+
+		if m.name.Lexeme == "this" {
+			r.resolveFunction(m, initializer)
+		} else {
+
+			r.resolveFunction(m, method)
+		}
+
 	}
+
+	r.endScope()
+
+	r.currentClass = cc
 
 	return nil
 }
@@ -243,5 +267,13 @@ func (r *Resolver) VisitGet(expr *Get) any {
 func (r *Resolver) VisitSet(expr *Set) any {
 	r.resolveExpr(expr.value)
 	r.resolveExpr(expr.object)
+	return nil
+}
+
+func (r *Resolver) VisitThis(expr *This) any {
+	if r.currentClass == NONE {
+		panic("Cannot use 'this' outside of a class.")
+	}
+	r.resolveLocal(expr, expr.keyword)
 	return nil
 }

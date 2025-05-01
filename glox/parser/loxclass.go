@@ -4,6 +4,13 @@ import (
 	"github.com/Martin-Martinez4/crafting-interpreters/glox/token"
 )
 
+type classType int
+
+const (
+	NONE classType = iota
+	CLASS
+)
+
 type Class struct {
 	name    string
 	fields  map[string]any
@@ -26,7 +33,7 @@ func (li *LoxInstance) Get(name *token.Token) any {
 	}
 
 	if m, ok := li.methods[name.Lexeme]; ok {
-		return m
+		return m.bind(li)
 	}
 
 	panic("undefined property '" + name.Lexeme + "'.")
@@ -57,9 +64,19 @@ func (lc *Class) String() string {
 
 func (lc *Class) Call(interpreter *Interpreter, arguments []any) any {
 	instance := NewLoxInstance(lc)
+
+	initializer, ok := lc.methods["this"]
+	if !ok {
+		initializer.bind(instance).Call(interpreter, arguments)
+	}
+
 	return instance
 }
 
 func (lc *Class) arity() int {
-	return 0
+	initializer, ok := lc.methods["this"]
+	if !ok {
+		return 0
+	}
+	return initializer.arity()
 }
