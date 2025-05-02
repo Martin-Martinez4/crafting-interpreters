@@ -324,14 +324,42 @@ func (i *Interpreter) visitIfStmt(ifStmt *IfStmt) any {
 }
 
 func (i *Interpreter) visitClassStmt(cStmt *ClassStmt) any {
+
+	var superclass any = nil
+	if cStmt.superclass != nil {
+		superclass = cStmt.superclass.Accept(i)
+
+	}
+
+	// should work
+	var sc *Class = nil
+	var ok bool
+
+	if superclass != nil {
+
+		sc, ok = superclass.(*Class)
+		if !ok {
+			panic(cStmt.superclass.name.Lexeme + " Superclass must be a class")
+		}
+	}
+
 	i.environment.define(cStmt.name.Lexeme, nil)
+
+	if cStmt.superclass != nil {
+		i.environment = NewEnvironment(i.environment)
+		i.environment.define("super", superclass)
+	}
 
 	methods := map[string]*Function{}
 	for _, m := range cStmt.methods {
 		methods[m.name.Lexeme] = NewFunciton(m, i.environment, m.name.Lexeme == "this")
 	}
 
-	class := NewClass(cStmt.name.Lexeme, methods)
+	class := NewClass(cStmt.name.Lexeme, sc, methods)
+
+	if superclass != nil {
+		i.environment = i.environment.enclosing
+	}
 	i.environment.Assign(cStmt.name, class)
 	return nil
 }
@@ -371,6 +399,24 @@ func (i *Interpreter) visitReturnStmt(r *ReturnStmt) any {
 
 func (i *Interpreter) VisitThis(expr *This) any {
 	return i.lookUpVariable(expr.keyword, expr)
+}
+
+func (i *Interpreter) VisitSuper(expr *Super) any {
+	distance := i.locals[fmt.Sprintf("%v", expr)]
+	superclass, ok := i.environment.getAt(distance, "super").(*Class)
+	if !ok {
+		panic("superclass can only be a class")
+	}
+	object, ok := i.environment.getAt(distance-1, "this").(*LoxInstance)
+	if !ok {
+		panic("this can only be a class instance")
+	}
+	method, ok := superclass.findMethod(expr.method.Lexeme)
+	if method == nil {
+		panic(fmt.Sprintf("Undefined property '%s'.", expr.method.Lexeme))
+	}
+	return method.bind(object)
+
 }
 
 func (i *Interpreter) executeBlock(statements []Stmt, env *Environment) any {

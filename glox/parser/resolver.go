@@ -236,7 +236,22 @@ func (r *Resolver) visitClassStmt(stmt *ClassStmt) any {
 	r.currentClass = CLASS
 
 	r.declare(stmt.name)
+	if stmt.superclass != nil {
+		r.currentClass = SUBCLASS
+		r.resolveExpr(stmt.superclass)
+	}
 	r.define(stmt.name)
+
+	if stmt.superclass != nil && stmt.name.Lexeme == stmt.superclass.name.Lexeme {
+		panic("A class cannot inherit from itself")
+	}
+
+	if stmt.superclass != nil {
+		r.currentClass = SUBCLASS
+		r.resolveExpr(stmt.superclass)
+		r.beginScope()
+		(*r.scopes.peek())["super"] = true
+	}
 
 	r.beginScope()
 	(*r.scopes.peek())["this"] = true
@@ -253,6 +268,10 @@ func (r *Resolver) visitClassStmt(stmt *ClassStmt) any {
 	}
 
 	r.endScope()
+
+	if stmt.superclass != nil {
+		r.endScope()
+	}
 
 	r.currentClass = cc
 
@@ -273,6 +292,16 @@ func (r *Resolver) VisitSet(expr *Set) any {
 func (r *Resolver) VisitThis(expr *This) any {
 	if r.currentClass == NONE {
 		panic("Cannot use 'this' outside of a class.")
+	}
+	r.resolveLocal(expr, expr.keyword)
+	return nil
+}
+
+func (r *Resolver) VisitSuper(expr *Super) any {
+	if r.currentClass == NONE {
+		panic("cannot use 'super' outside of a class")
+	} else if r.currentClass != SUBCLASS {
+		panic("cannot use 'super' in a class with no superclass")
 	}
 	r.resolveLocal(expr, expr.keyword)
 	return nil

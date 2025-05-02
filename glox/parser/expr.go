@@ -36,6 +36,7 @@ type ExprVisitor interface {
 	VisitGet(expr *Get) any
 	VisitSet(expr *Set) any
 	VisitThis(expr *This) any
+	VisitSuper(expr *Super) any
 }
 
 type Binary struct {
@@ -207,4 +208,21 @@ type Set struct {
 
 func (s *Set) Accept(visitor ExprVisitor) any {
 	return visitor.VisitSet(s)
+}
+
+type Super struct {
+	keyword *token.Token
+	method  *token.Token
+	defaultStartEnd
+}
+
+func NewSuper(keyword *token.Token, method *token.Token) *Super {
+	return &Super{
+		keyword: keyword,
+		method:  method,
+	}
+}
+
+func (s *Super) Accept(visitor ExprVisitor) any {
+	return visitor.VisitSuper(s)
 }

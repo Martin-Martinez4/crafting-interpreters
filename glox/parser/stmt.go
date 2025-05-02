@@ -91,8 +91,9 @@ func (r *ReturnStmt) Accept(v StmtVisitor) any {
 }
 
 type ClassStmt struct {
-	name    *token.Token
-	methods []*FunctionStmt
+	name       *token.Token
+	methods    []*FunctionStmt
+	superclass *Variable
 }
 
 func (c *ClassStmt) Accept(v StmtVisitor) any {

@@ -47,6 +47,17 @@ func (p *Parser) classDeclaration() *ClassStmt {
 	if err != nil {
 		panic(err.Error())
 	}
+
+	var superclass *Variable = nil
+	if p.match(token.LESS) {
+		_, err = p.consume(token.IDENTIFIER, "Expect superclass name.")
+		if err != nil {
+			panic(err.Error())
+		}
+
+		superclass = NewVariableExpr(p.previous())
+	}
+
 	_, err = p.consume(token.LEFT_BRACE, "Expect '{' before class body.")
 	if err != nil {
 		panic(err.Error())
@@ -63,7 +74,7 @@ func (p *Parser) classDeclaration() *ClassStmt {
 		panic(err.Error())
 	}
 
-	return &ClassStmt{name: name, methods: methods}
+	return &ClassStmt{name: name, methods: methods, superclass: superclass}
 
 }
 
@@ -479,6 +490,22 @@ func (p *Parser) primary() Expr {
 
 	if p.match(token.NUMBER, token.STRING) {
 		return NewLiteralExpr(p.previous().Literal)
+	}
+
+	if p.match(token.SUPER) {
+		keyword := p.previous()
+		_, err := p.consume(token.DOT, "Expect '.' after super.")
+		if err != nil {
+			panic(err.Error())
+		}
+
+		method, err := p.consume(token.IDENTIFIER, "Expect superclass method name.")
+		if err != nil {
+			panic(err.Error())
+		}
+
+		return NewSuper(keyword, method)
+
 	}
 
 	if p.match(token.THIS) {

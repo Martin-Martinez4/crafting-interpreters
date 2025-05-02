@@ -55,6 +55,9 @@ func (astp *AstPrinter) VisitSet(expr *Set) any {
 func (astp *AstPrinter) VisitThis(expr *This) any {
 	return nil
 }
+func (astp *AstPrinter) VisitSuper(expr *Super) any {
+	return nil
+}
 
 func (astp *AstPrinter) parenthesize(name string, exprs ...Expr) string {
 	var ss strings.Builder
