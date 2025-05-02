@@ -66,7 +66,7 @@ func (lc *Class) Call(interpreter *Interpreter, arguments []any) any {
 	instance := NewLoxInstance(lc)
 
 	initializer, ok := lc.methods["this"]
-	if !ok {
+	if ok {
 		initializer.bind(instance).Call(interpreter, arguments)
 	}
 
