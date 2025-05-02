@@ -1,0 +1,44 @@
+cmake_minimum_required(VERSION 3.10)
+project(clox C)
+
+# Generate compile_commands.json
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+
+
+set(sources ${sources}
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/chunk/chunk.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/memory/memory.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/debug/debug.c
+)
+
+# breaks linking in C?
+# if(WIN32)
+#     # Create your game executable target as usual
+#     add_executable(
+#   ${CMAKE_PROJECT_NAME}
+#   WIN32
+#   ${CMAKE_SOURCE_DIR}/src/main.c
+#   ${sources}
+
+# )
+# else()
+add_executable(
+    ${CMAKE_PROJECT_NAME}
+    ${CMAKE_SOURCE_DIR}/src/main.c
+    ${sources} 
+  )
+# endif()
+
+include_directories(
+  ${CMAKE_PROJECT_NAME}
+  PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/common/
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/chunk/
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/memory/
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/debug/
+  )
+  
+
+
