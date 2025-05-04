@@ -7,9 +7,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 
 set(sources ${sources}
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/chunk/chunk.c
   ${CMAKE_CURRENT_SOURCE_DIR}/src/memory/memory.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/value/value.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/chunk/chunk.c
   ${CMAKE_CURRENT_SOURCE_DIR}/src/debug/debug.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/vm/vm.c
 )
 
 # breaks linking in C?
@@ -35,9 +37,11 @@ include_directories(
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/src/
   ${CMAKE_CURRENT_SOURCE_DIR}/src/common/
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/chunk/
   ${CMAKE_CURRENT_SOURCE_DIR}/src/memory/
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/value/
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/chunk/
   ${CMAKE_CURRENT_SOURCE_DIR}/src/debug/
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/vm/
   )
   
 
