@@ -33,10 +33,10 @@ static void setLine(Chunk* chunk, int line){
     chunk->lines[chunk->lineCount-1]++;
   }
   else{
-
+    
     chunk->lineCount += 2;
     chunk->lines[chunk->lineCount-2] = line;
-    chunk->lines[chunk->lineCount-1] = chunk->lines[chunk->lineCount-3]+1;
+    chunk->lines[chunk->lineCount-1] = chunk->lines[chunk->lineCount-3] > 0 ? chunk->lines[chunk->lineCount-3] + 1 : 1;
   }
 }
 
@@ -51,7 +51,6 @@ int getLine(Chunk* chunk, int offset){
   }
 
   return chunk->lines[index-1];
-  return chunk->lineCapacity;
 
 }
 

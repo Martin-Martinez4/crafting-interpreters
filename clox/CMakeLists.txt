@@ -9,6 +9,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(sources ${sources}
   ${CMAKE_CURRENT_SOURCE_DIR}/src/memory/memory.c
   ${CMAKE_CURRENT_SOURCE_DIR}/src/value/value.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/object/object.c
   ${CMAKE_CURRENT_SOURCE_DIR}/src/chunk/chunk.c
   ${CMAKE_CURRENT_SOURCE_DIR}/src/scanner/scanner.c
   ${CMAKE_CURRENT_SOURCE_DIR}/src/compiler/compiler.c
@@ -41,6 +42,7 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/src/common/
   ${CMAKE_CURRENT_SOURCE_DIR}/src/memory/
   ${CMAKE_CURRENT_SOURCE_DIR}/src/value/
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/object/
   ${CMAKE_CURRENT_SOURCE_DIR}/src/chunk/
   ${CMAKE_CURRENT_SOURCE_DIR}/src/scanner/
   ${CMAKE_CURRENT_SOURCE_DIR}/src/compiler/

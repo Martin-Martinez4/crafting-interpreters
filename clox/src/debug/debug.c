@@ -17,7 +17,7 @@ static int constantInstruction(const char* name, Chunk* chunk, int offset){
 }
 
 void disassembleChunk(Chunk* chunk, const char* name){
-  printf("== %s == %d\n", name, chunk->count);
+  printf("== %s ==\n");
   for (int offset = 0; offset < chunk->count;){
     offset = disassembleInstruction(chunk, offset);
   }
@@ -38,10 +38,10 @@ int disassembleInstruction(Chunk* chunk, int offset){
       case OP_NEGATE:
         return simpleInstruction("OP_NEGATE", offset);
 
-      case OP_ADD: simpleInstruction("OP_ADD", offset);
-      case OP_SUBTRACT: simpleInstruction("OP_SUBTRACT", offset);
-      case OP_MULTIPLY: simpleInstruction("OP_MULTIPLY", offset);
-      case OP_DIVIDE: simpleInstruction("OP_DIVIDE", offset);
+      case OP_ADD: return simpleInstruction("OP_ADD", offset);
+      case OP_SUBTRACT: return simpleInstruction("OP_SUBTRACT", offset);
+      case OP_MULTIPLY: return simpleInstruction("OP_MULTIPLY", offset);
+      case OP_DIVIDE: return simpleInstruction("OP_DIVIDE", offset);
 
       case OP_RETURN:
         printf("   | ");
