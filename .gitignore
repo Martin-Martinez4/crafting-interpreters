@@ -84,3 +84,8 @@ dkms.conf
 
 # build folder
 clox/build/
+
+# // vscode
+.vscode/** 
+clox/.vscode/**
+glox/.vscode/**
