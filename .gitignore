@@ -89,3 +89,5 @@ clox/build/
 .vscode/** 
 clox/.vscode/**
 glox/.vscode/**
+.cache/**
+clox/.cache/**
