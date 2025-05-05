@@ -10,6 +10,8 @@ set(sources ${sources}
   ${CMAKE_CURRENT_SOURCE_DIR}/src/memory/memory.c
   ${CMAKE_CURRENT_SOURCE_DIR}/src/value/value.c
   ${CMAKE_CURRENT_SOURCE_DIR}/src/chunk/chunk.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/scanner/scanner.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/compiler/compiler.c
   ${CMAKE_CURRENT_SOURCE_DIR}/src/debug/debug.c
   ${CMAKE_CURRENT_SOURCE_DIR}/src/vm/vm.c
 )
@@ -40,9 +42,11 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/src/memory/
   ${CMAKE_CURRENT_SOURCE_DIR}/src/value/
   ${CMAKE_CURRENT_SOURCE_DIR}/src/chunk/
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/scanner/
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/compiler/
   ${CMAKE_CURRENT_SOURCE_DIR}/src/debug/
   ${CMAKE_CURRENT_SOURCE_DIR}/src/vm/
-  )
+)
   
 
 
