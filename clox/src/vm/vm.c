@@ -30,8 +30,10 @@ static void runtimeError(const char* format, ...) {
 void initVM(){
     resetStack();
     vm.objects = NULL;
+    initTable(&vm.strings);
 }
 void freeVM(){
+    freeTable(&vm.strings);
     freeObjects();
 }
 
@@ -98,11 +100,13 @@ static InterpreterResult run() {
             case OP_ADD:
                 if(IS_STRING(peek(0)) && IS_STRING(peek(1))){
                     concatenate();
+                    break;
                 }else if(IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))){
                     double b = AS_NUMBER(pop());
                     double a = AS_NUMBER(pop());
 
                     push(NUMBER_VAL(a + b));
+                    break;
                 }else{
                     runtimeError("operands must be two numbers or two strings.");
                     return INTERPRET_RUNTIME_ERROR;
@@ -111,10 +115,14 @@ static InterpreterResult run() {
             case OP_SUBTRACT: BINARY_OP(NUMBER_VAL, -); break;
             case OP_MULTIPLY: BINARY_OP(NUMBER_VAL, *); break;
             case OP_DIVIDE: BINARY_OP(NUMBER_VAL, /); break;
-
-            case OP_RETURN:
+            case OP_PRINT:
                 printValue(pop());
                 printf("\n");
+                break;
+
+            case OP_RETURN:
+                // printValue(pop());
+                // printf("\n");
                 return INTERPRET_OK;
             
             case OP_CONSTANT:
@@ -138,6 +146,10 @@ static InterpreterResult run() {
             case OP_NOT:
                 push(BOOL_VAL(isFalsey(pop())));
                 break;
+
+           
+            default:
+                return INTERPRET_OK;
         }
 
 

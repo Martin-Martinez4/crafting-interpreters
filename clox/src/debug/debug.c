@@ -4,7 +4,7 @@
 
 
 static int simpleInstruction(const char* name, int offset){
-  printf("%s\n", name);
+  printf(" %s\n", name);
   return offset + 1;
 }
 
@@ -66,7 +66,10 @@ int disassembleInstruction(Chunk* chunk, int offset){
         return simpleInstruction("OP_GREATER", offset);
       case OP_LESS:
         return simpleInstruction("OP_LESS", offset);
+      case OP_PRINT:
+        return simpleInstruction("OP_PRINT", offset);
       default:
+        printf("%4d, offset: %d ", getLine(chunk, offset), offset);
         printf("unknown opcode %d\n", instruction);
         return offset + 1;
   }

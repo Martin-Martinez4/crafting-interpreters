@@ -4,7 +4,6 @@
 #include "common.h"
 #include "value.h"
 
-#define TABLE_MAX_LOAD = 0.75;
 
 typedef struct {
     objString* key;
@@ -20,5 +19,9 @@ typedef struct {
 void initTable(Table* table);
 void freeTable(Table* table);
 bool tableSet(Table* table, objString* key, Value value);
+bool tableDelete(Table* table, objString* key);
+bool tableGet(Table* table, objString* key, Value* value);
+void tableAddAll(Table* from, Table* to);
+objString* tableFindString(Table* table, const char* chars, int lenght, uint32_t hash);
 
 #endif
