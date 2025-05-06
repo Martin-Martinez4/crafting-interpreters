@@ -16,6 +16,7 @@ typedef enum {
 
 struct obj {
   objType type;
+  struct obj* next;
 };
 
 // struct composition
@@ -23,6 +24,8 @@ struct objString {
   obj obj;
   int length;
   char* chars;
+  // cache the hash because it is expensive to calculate
+  uint32_t hash;
 };
 
 objString* takeString(char* chars, int length);
