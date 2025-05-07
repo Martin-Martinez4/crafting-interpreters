@@ -10,6 +10,8 @@
  #include "debug.h"
 #endif
 
+
+
 typedef enum {
     PREC_NONE,
     PREC_ASSIGNMENT,
@@ -39,10 +41,23 @@ typedef struct {
     bool panicMode;
 } Parser;
 
+typedef struct {
+    Token name;
+    int depth;
+} Local;
+
+typedef struct {
+    Local locals[UINT8_COUNT];
+    int localCount;
+    int scopeDepth;
+} Compiler;
+
 Parser parser;
+Compiler* current = NULL;
 
 Chunk* compilingChunk;
 
+static void declaration();
 
 static void errorAt(Token* token, const char* message){
     if(parser.panicMode) return;
@@ -149,6 +164,12 @@ static uint8_t makeConstant(Value value){
 
 static void emitConstant(Value value){
     emitBytes(OP_CONSTANT, makeConstant(value));
+}
+
+static void initCompiler(Compiler* compiler){
+    compiler->localCount = 0;
+    compiler->scopeDepth = 0;
+    current = compiler;
 }
 
 static void binary(bool canAssign){
@@ -303,9 +324,26 @@ static void expressionStatement(){
     emitByte(OP_POP);
 }
 
+static void block(){
+    while(!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)){
+        declaration();
+    }
+}
+
+static void beginScope(){
+    current->scopeDepth++;
+}
+
+static void endScope(){
+    current->scopeDepth--;
+}
 static void statement(){
     if(match(TOKEN_PRINT)){
         printStatement();
+    }else if(match(TOKEN_LEFT_BRACE)){
+        beginScope();
+        block();
+        endScope();
     }else{
         expressionStatement();
     }
@@ -372,6 +410,8 @@ static void declaration(){
 
 bool compile(const char* source, Chunk* chunk){
     initScanner(source);
+    Compiler compiler;
+    initCompiler(&compiler);
     compilingChunk = chunk;
 
     parser.hadError = false;
