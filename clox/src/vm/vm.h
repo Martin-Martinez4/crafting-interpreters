@@ -13,6 +13,7 @@ typedef struct {
     Chunk* chunk;
     uint8_t* ip;
     Value stack[STACK_MAX];
+    Table globals;
     Table strings;
     Value* stackTop;
     obj* objects;

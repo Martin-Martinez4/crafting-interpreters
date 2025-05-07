@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "debug.h"
+#include "chunk.h"
 #include "value.h"
 
 
@@ -36,6 +37,7 @@ int disassembleInstruction(Chunk* chunk, int offset){
     uint8_t instruction = chunk->code[offset];
     switch(instruction){
       case OP_NEGATE:
+        printf("%4d, offset: %d ", getLine(chunk, offset), offset);
         return simpleInstruction("OP_NEGATE", offset);
 
       case OP_ADD: return simpleInstruction("OP_ADD", offset);
@@ -68,6 +70,14 @@ int disassembleInstruction(Chunk* chunk, int offset){
         return simpleInstruction("OP_LESS", offset);
       case OP_PRINT:
         return simpleInstruction("OP_PRINT", offset);
+      case OP_POP:
+        return simpleInstruction("OP_POP", offset);
+      case OP_DEFINE_GLOBAL:
+        return constantInstruction("OP_DEFINE_GLOBAL", chunk, offset);
+      case OP_GET_GLOBAL:
+        return constantInstruction("OP_GET_GLOBAL", chunk, offset);
+        case OP_SET_GLOBAL:
+          return constantInstruction("OP_SET_GLOBAL", chunk, offset);
       default:
         printf("%4d, offset: %d ", getLine(chunk, offset), offset);
         printf("unknown opcode %d\n", instruction);
