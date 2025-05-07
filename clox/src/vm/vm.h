@@ -5,13 +5,23 @@
 #include "value.h"
 #include "compiler.h"
 #include "table.h"
+#include "object.h"
 
 
-#define STACK_MAX 256
+#define FRAMES_MAX 64
+#define STACK_MAX (FRAMES_MAX * UINT8_COUNT)
+
+typedef struct {
+    objFunction* function;
+    uint8_t* ip;
+    Value* slots;
+} CallFrame;
 
 typedef struct {
     Chunk* chunk;
     uint8_t* ip;
+    CallFrame frames[FRAMES_MAX];
+    int frameCount;
     Value stack[STACK_MAX];
     Table globals;
     Table strings;

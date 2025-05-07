@@ -38,6 +38,22 @@ static uint32_t hashString(const char* key, int length){
   return hash;
 }
 
+static void printFunction(objFunction* function){
+  if(function->name == NULL){
+    printf("<script>");
+    return;
+  }
+  printf("<fn %s>", function->name->chars);
+}
+
+objFunction* newFunction(){
+  objFunction* function = ALLOCATE_OBJ(objFunction, OBJ_FUNCTION);
+  function->arity = 0;
+  function->name = NULL;
+  initChunk(&function->chunk);
+  return function;
+}
+
 objString* takeString(char* chars, int length){
   uint32_t hash = hashString(chars, length);
   
@@ -66,6 +82,10 @@ void printObject(Value value){
   switch(OBJ_TYPE(value)){
     case OBJ_STRING:
       printf("%s", AS_CSTRING(value));
+      break;
+
+    case OBJ_FUNCTION:
+      printFunction(AS_FUNCTION(value));
       break;
   }
 }

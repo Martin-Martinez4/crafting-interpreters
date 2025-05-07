@@ -3,14 +3,19 @@
 
 #include "common.h"
 #include "value.h"
+#include "chunk.h"
 
 #define OBJ_TYPE(value) (AS_OBJ(value)->type)
+
 #define IS_STRING(value) isObjType(value, OBJ_STRING)
+#define IS_FUNCTION(value) isObjType(value, OBJ_FUNCTION)
 
 #define AS_STRING(value) ((objString*)AS_OBJ(value))
 #define AS_CSTRING(value) (((objString*)AS_OBJ(value))->chars)
+#define AS_FUNCTION(value) ((objFunction*)AS_OBJ(value)) 
 
 typedef enum {
+  OBJ_FUNCTION,
   OBJ_STRING,
 } objType;
 
@@ -18,6 +23,13 @@ struct obj {
   objType type;
   struct obj* next;
 };
+
+typedef struct {
+  obj obj;
+  int arity;
+  Chunk chunk;
+  objString* name;
+} objFunction;
 
 // struct composition
 struct objString {
@@ -27,6 +39,8 @@ struct objString {
   // cache the hash because it is expensive to calculate
   uint32_t hash;
 };
+
+objFunction* newFunction();
 
 objString* takeString(char* chars, int length);
 
