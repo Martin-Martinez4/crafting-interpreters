@@ -24,7 +24,7 @@ typedef enum {
     PREC_PRIMARY,
 } Precedence;
 
-typedef void (*ParseFn)();
+typedef void (*ParseFn)(bool);
 
 typedef struct {
     ParseFn prefix;
@@ -134,7 +134,7 @@ static void parsePrecedence(Precedence precedence){
     while(precedence <= getRule(parser.current.type)->precedence){
         advance();
         ParseFn infixRule = getRule(parser.previous.type)->infix;
-        infixRule();
+        infixRule(canAssign);
     }
 }
 static uint8_t makeConstant(Value value){
@@ -151,7 +151,7 @@ static void emitConstant(Value value){
     emitBytes(OP_CONSTANT, makeConstant(value));
 }
 
-static void binary(){
+static void binary(bool canAssign){
     TokenType operatorType = parser.previous.type;
     ParseRule* rule = getRule(operatorType);
     parsePrecedence((Precedence)(rule->precedence + 1));
@@ -172,7 +172,7 @@ static void binary(){
     }
 }
 
-static void number(){
+static void number(bool canAssign){
     double value = strtod(parser.previous.start, NULL);
     emitConstant(NUMBER_VAL(value));
 }
@@ -181,12 +181,12 @@ static void expression(){
     parsePrecedence(PREC_ASSIGNMENT);
 }
 
-static void grouping(){
+static void grouping(bool canAssign){
     expression();
     consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression");
 }
 
-static void unary(){
+static void unary(bool canAssign){
     TokenType operatorType = parser.previous.type;
 
     parsePrecedence(PREC_UNARY);
@@ -198,7 +198,7 @@ static void unary(){
     }
 }
 
-static void literal(){
+static void literal(bool canAssign){
     switch(parser.previous.type){
         case TOKEN_FALSE: emitByte(OP_FALSE); break;
         case TOKEN_NIL: emitByte(OP_NIL); break;
@@ -208,17 +208,27 @@ static void literal(){
 
 }
 
-static void string(){
+static void string(bool canAssign){
     emitConstant(OBJ_VAL(copyString(parser.previous.start +1, parser.previous.length-2)));
 }
 
 static uint8_t identifierConstant(Token* name){
     return makeConstant(OBJ_VAL(copyString(name->start, name->length)));
 }
-static void namedVariable(Token name){
+
+static bool check(TokenType type){
+    return parser.current.type == type;
+}
+
+static bool match(TokenType type){
+    if(!check(type)) return false;
+    advance();
+    return true;
+}
+static void namedVariable(Token name, bool canAssign){
     uint8_t arg = identifierConstant(&name);
 
-    if(match(TOKEN_EQUAL)){
+    if(canAssign && match(TOKEN_EQUAL)){
         expression();
         emitBytes(OP_SET_GLOBAL, arg);
     }else{
@@ -280,15 +290,6 @@ static ParseRule* getRule(TokenType type){
     return &rules[type];
 }
 
-static bool check(TokenType type){
-    return parser.current.type == type;
-}
-
-static bool match(TokenType type){
-    if(!check(type)) return false;
-    advance();
-    return true;
-}
 
 static void printStatement(){
     expression();
