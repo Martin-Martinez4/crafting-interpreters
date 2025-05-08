@@ -9,10 +9,10 @@ fun fib(n) {
   return fib(n-2) + fib(n-1);
 }
 
-print fib(40);
+for(var i = 0; i < 20; i = i + 1) {
+  print fib(i);
+}
+
+var c2 = 2;
 print "time: ";
-var c2 = clock();
-
-
-
-print (c2 - c1) / 1000;
+print clock() - c1;
