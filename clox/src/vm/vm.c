@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
@@ -25,10 +26,21 @@ static void runtimeError(const char* format, ...) {
     va_end(args);
     fputs("\n", stderr);
 
-    CallFrame* frame = &vm.frames[vm.frameCount-1];
-    size_t instruction = frame->ip - frame->function->chunk.code -1;
-    int line = frame->function->chunk.lines[instruction];
-    fprintf(stderr, "[line %d] in script\n", line);
+    for(int i = vm.frameCount-1; i >= 0; i--){
+
+        CallFrame* frame = &vm.frames[i];
+        objFunction* function = frame->function;
+        size_t instruction = frame->ip - function->chunk.code -1;
+        int line = function->chunk.lines[instruction];
+        fprintf(stderr, "[line %d] in \n", line);
+
+        if(function->name == NULL){
+            fprintf(stderr, "script\n");
+        }else{
+            fprintf(stderr, "%s()\n", function->name->chars);
+        }
+
+    }
     resetStack();
 }
 
@@ -39,8 +51,8 @@ void initVM(){
     initTable(&vm.globals);
 }
 void freeVM(){
-    freeTable(&vm.strings);
     freeTable(&vm.globals);
+    freeTable(&vm.strings);
     freeObjects();
 }
 
@@ -64,6 +76,39 @@ static void concatenate(){
 
     objString* res = takeString(chars, length);
     push(OBJ_VAL(res));
+}
+
+static bool call(objFunction* function, int argCount){
+
+    if(argCount != function->arity){
+        runtimeError("Expected %d arguments but got %d.", function->arity, argCount);
+        return false;
+    }
+
+    if(vm.frameCount == FRAMES_MAX){
+        runtimeError("Stack overflow.");
+        return false;
+    }
+
+    CallFrame* frame = &vm.frames[vm.frameCount++];
+    frame->function = function;
+    frame->ip = function->chunk.code;
+    frame->slots = vm.stackTop - argCount -1;
+    return true;
+}
+
+static bool callValue(Value callee, int argCount){
+    if(IS_OBJ(callee)){
+        switch (OBJ_TYPE(callee)){
+            case OBJ_FUNCTION:
+                return call(AS_FUNCTION(callee), argCount);
+            default:
+                break;
+        }
+    }
+
+    runtimeError("Can only call functions and classes.");
+    return false;
 }
 
 static InterpreterResult run() {
@@ -133,9 +178,17 @@ static InterpreterResult run() {
                 break;
 
             case OP_RETURN:
-                // printValue(pop());
-                // printf("\n");
-                return INTERPRET_OK;
+                Value result = pop();
+                vm.frameCount--;
+                if(vm.frameCount == 0){
+                    pop();
+                    return INTERPRET_OK;
+                }
+
+                vm.stackTop = frame->slots;
+                push(result);
+                frame = &vm.frames[vm.frameCount - 1];
+                break;
             
             case OP_CONSTANT:
                 Value constant = READ_CONSTANT();
@@ -221,6 +274,17 @@ static InterpreterResult run() {
                 frame->ip -= offset;
                 break;    
             }
+
+            case OP_CALL: {
+                int argCount = READ_BYTE();
+                if(!callValue(peek(argCount), argCount)){
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                frame = &vm.frames[vm.frameCount - 1];
+                break;
+            }
+            default:
+                return INTERPRET_RUNTIME_ERROR;
         }
 
 
@@ -236,12 +300,14 @@ static InterpreterResult run() {
 InterpreterResult interpret(const char* source){
     objFunction* function = compile(source);
     if(function == NULL) return INTERPRET_COMPILE_ERROR;
-
-    push(OBJ_VAL(function));
+    
     CallFrame* frame = &vm.frames[vm.frameCount++];
     frame->function = function;
     frame->ip = function->chunk.code;
     frame->slots = vm.stack;
+
+    push(OBJ_VAL(function));
+    call(function, 0);
 
     return run();
 }

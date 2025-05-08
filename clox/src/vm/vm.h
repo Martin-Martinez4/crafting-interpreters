@@ -23,9 +23,9 @@ typedef struct {
     CallFrame frames[FRAMES_MAX];
     int frameCount;
     Value stack[STACK_MAX];
+    Value* stackTop;
     Table globals;
     Table strings;
-    Value* stackTop;
     obj* objects;
 } VM;
 

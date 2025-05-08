@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "chunk.h"
 #include "common.h"
 #include "compiler.h"
 #include "scanner.h"
@@ -50,7 +51,7 @@ typedef enum {
     TYPE_SCRIPT,
 } FunctionType;
 
-typedef struct {
+typedef struct Compiler {
     struct Compiler* enclosing;
     objFunction* function;
     FunctionType type;
@@ -148,6 +149,7 @@ static void patchJump(int offset){
 }
 
 static void emitReturn(){
+    emitByte(OP_NIL);
     emitByte(TOKEN_RETURN);
 }
 
@@ -199,7 +201,7 @@ static void emitConstant(Value value){
 }
 
 static void initCompiler(Compiler* compiler, FunctionType type){
-    current = current->enclosing;
+    compiler->enclosing = current;
     compiler->function = NULL;
     compiler->type = type;
     compiler->localCount = 0;
@@ -356,8 +358,29 @@ static void or_(bool canAssign){
     patchJump(endJump);
 }
 
+static uint8_t argumentList(){
+    uint8_t argCount = 0;
+    if(!check(TOKEN_RIGHT_PAREN)){
+        do {
+            expression();
+            if(argCount == 255){
+                error("Cannot have more than 255 arguments.");
+            }
+            argCount++;
+        } while(match(TOKEN_COMMA));
+    }
+
+    consume(TOKEN_RIGHT_PAREN, "Expect ')' after arguments.");
+    return argCount;
+}
+
+static void call(bool canAssign){
+    uint8_t argCount = argumentList();
+    emitBytes(OP_CALL, argCount);
+}
+
 ParseRule rules[] = {
-    [TOKEN_LEFT_PAREN]      = {grouping, NULL, PREC_NONE},
+    [TOKEN_LEFT_PAREN]      = {grouping, call, PREC_CALL},
     [TOKEN_RIGHT_PAREN]     = {NULL, NULL, PREC_NONE},
     [TOKEN_LEFT_BRACE]      = {NULL, NULL, PREC_NONE},
     [TOKEN_RIGHT_BRACE]     = {NULL, NULL, PREC_NONE},
@@ -532,6 +555,20 @@ static void forStatement(){
     endScope();
 }
 
+static void returnStatement(){
+    if(current->type == TYPE_SCRIPT){
+        error("Cannot return from top-level code.");
+    }
+
+    if(match(TOKEN_SEMICOLON)){
+        emitReturn();
+    }else{
+        expression();
+        consume(TOKEN_SEMICOLON, "Expect ';' after return value");
+        emitByte(OP_RETURN);
+    }
+}
+
 static void statement(){
     if(match(TOKEN_PRINT)){
         printStatement();
@@ -539,6 +576,8 @@ static void statement(){
         forStatement();
     }else if(match(TOKEN_IF)){
         ifStatement();
+    }else if(match(TOKEN_RETURN)){
+        returnStatement();
     } else if(match(TOKEN_WHILE)){
         whileStatement();
     }else if(match(TOKEN_LEFT_BRACE)){
