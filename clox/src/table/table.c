@@ -26,17 +26,19 @@ static Entry* findEntry(Entry* entries, int capacity, objString* key){
     for(;;){
         Entry* entry = &entries[index];
 
-        if(entries->key == NULL){
-
-            if(IS_NIL(entry->value)){
-                return tombstone != NULL ? tombstone : entry;
-            }else{
-                if(tombstone == NULL) tombstone = entry;
+        if (entry->key == NULL) {
+            if (IS_NIL(entry->value)) {
+              // Empty entry.
+              return tombstone != NULL ? tombstone : entry;
+            } else {
+              // We found a tombstone.
+              if (tombstone == NULL) tombstone = entry;
             }
-        } else if(entry->key == key){
+          } else if (entry->key == key) {
+            // We found the key.
             return entry;
-        }
-        index = (index + 1) % capacity;
+          }
+          index = (index + 1) & (capacity - 1);
     }
 }
 
@@ -93,10 +95,10 @@ bool tableDelete(Table* table, objString* key){
 
 bool tableGet(Table* table, objString* key, Value* value){
     if(table->count == 0) return false;
-
+    
     Entry* entry = findEntry(table->entries, table->capacity, key);
     if(entry->key == NULL) return false;
-
+    
     *value = entry->value;
     return true;
 }

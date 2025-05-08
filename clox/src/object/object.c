@@ -46,9 +46,22 @@ static void printFunction(objFunction* function){
   printf("<fn %s>", function->name->chars);
 }
 
+objClosure* newClosure(objFunction* function){
+  objUpValue** upvalues = ALLOCATE(objUpValue*, function->upValueCount);
+  for(int i = 0; i < function->upValueCount; i++){
+    upvalues[i] = NULL;
+  }
+  objClosure* closure = ALLOCATE_OBJ(objClosure, OBJ_CLOSURE);
+  closure->function = function;
+  closure->upValues = upvalues;
+  closure->upValueCount = function->upValueCount;
+  return closure;
+}
+
 objFunction* newFunction(){
   objFunction* function = ALLOCATE_OBJ(objFunction, OBJ_FUNCTION);
   function->arity = 0;
+  function->upValueCount = 0;
   function->name = NULL;
   initChunk(&function->chunk);
   return function;
@@ -84,6 +97,14 @@ objString* copyString(const char* chars, int length){
   return allocateString(heapChars, length, hash);
 }
 
+objUpValue* newUpValue(Value* slot){
+  objUpValue* upValue = ALLOCATE_OBJ(objUpValue, OBJ_UPVALUE);
+  upValue->closed = NIL_VAL;
+  upValue->location = slot;
+  upValue->next = NULL;
+  return upValue;
+}
+
 void printObject(Value value){
   switch(OBJ_TYPE(value)){
     case OBJ_STRING:
@@ -96,6 +117,14 @@ void printObject(Value value){
 
     case OBJ_NATIVE:
       printf("<native fn>");
+      break;
+
+    case OBJ_CLOSURE:
+      printFunction(AS_CLOSURE(value)->function);
+      break;
+
+    case OBJ_UPVALUE:
+      printf("upvalue");
       break;
   }
 }

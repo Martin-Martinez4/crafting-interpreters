@@ -11,6 +11,7 @@ fun fib(){
 var fib2 = fib;
 print fib2();
 
+
 print clock();
 
 

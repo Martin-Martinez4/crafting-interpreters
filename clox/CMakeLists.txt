@@ -4,9 +4,8 @@ project(clox C)
 # Generate compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(CMAKE_BUILD_TYPE Debug)
-
-
+set(CMAKE_BUILD_TYPE Debug) 
+# set(CMAKE_BUILD_TYPE Release)
 
 set(sources ${sources}
   ${CMAKE_CURRENT_SOURCE_DIR}/src/memory/memory.c

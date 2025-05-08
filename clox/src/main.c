@@ -5,45 +5,48 @@
 #include "common.h"
 #include "vm.h"
 
-static char* readFile(const char* path){
+static char* readFile(const char* path) {
   FILE* file = fopen(path, "rb");
-
-  if(file == NULL){
-    fprintf(stderr, "Could not open file \"%s\"\n", path);
+//> no-file
+  if (file == NULL) {
+    fprintf(stderr, "Could not open file \"%s\".\n", path);
     exit(74);
   }
+//< no-file
 
-  // seek to the end of file
   fseek(file, 0L, SEEK_END);
-  // find bytes from current (end of file) to the start
   size_t fileSize = ftell(file);
-  // return cursor to start
   rewind(file);
 
   char* buffer = (char*)malloc(fileSize + 1);
-  if(buffer == NULL){
-    fprintf(stderr, "Not enough memory to read \"%s\"\n", path);
+//> no-buffer
+  if (buffer == NULL) {
+    fprintf(stderr, "Not enough memory to read \"%s\".\n", path);
     exit(74);
   }
+  
+//< no-buffer
   size_t bytesRead = fread(buffer, sizeof(char), fileSize, file);
-  if(bytesRead < fileSize){
-    fprintf(stderr, "Could not read file \"%s\"\n", path);
+//> no-read
+  if (bytesRead < fileSize) {
+    fprintf(stderr, "Could not read file \"%s\".\n", path);
     exit(74);
   }
+  
+//< no-read
   buffer[bytesRead] = '\0';
 
   fclose(file);
   return buffer;
 }
 
-static void runFile(const char* path){
+static void runFile(const char* path) {
   char* source = readFile(path);
   InterpreterResult result = interpret(source);
-  free(source);
+  free(source); // [owner]
 
-  if(result == INTERPRET_COMPILE_ERROR) exit(65);
-  if(result == INTERPRET_RUNTIME_ERROR) exit(70);
-
+  if (result == INTERPRET_COMPILE_ERROR) exit(65);
+  if (result == INTERPRET_RUNTIME_ERROR) exit(70);
 }
 
 static void repl(){

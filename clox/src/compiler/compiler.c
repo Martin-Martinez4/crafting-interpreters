@@ -44,6 +44,7 @@ typedef struct {
 typedef struct {
     Token name;
     int depth;
+    bool isCaptured;
 } Local;
 
 typedef enum {
@@ -51,12 +52,18 @@ typedef enum {
     TYPE_SCRIPT,
 } FunctionType;
 
+typedef struct {
+    uint8_t index;
+    bool isLocal;
+} UpValue;
+
 typedef struct Compiler {
     struct Compiler* enclosing;
     objFunction* function;
     FunctionType type;
     Local locals[UINT8_COUNT];
     int localCount;
+    UpValue upValues[UINT8_COUNT];
     int scopeDepth;
 } Compiler;
 
@@ -300,6 +307,22 @@ static bool identifiersEqual(Token* a, Token* b){
     return memcmp(a->start, b->start, a->length) == 0;
 }
 
+static int addUpValue(Compiler* compiler, uint8_t index, bool isLocal){
+    int upValueCount = compiler->function->upValueCount;
+
+    for(int i = 0; i < upValueCount; i++){
+        UpValue* upvalue = &compiler->upValues[i];
+        if(upvalue->index == index && upvalue->isLocal == isLocal){
+            return i;
+        }
+    }
+
+    compiler->upValues[upValueCount].isLocal = isLocal;
+    compiler->upValues[upValueCount].index = index;
+    return compiler->function->upValueCount++;
+    
+}
+
 static int resolveLocal(Compiler* compiler, Token* name){
     // simple linear search
     for(int i = compiler->localCount-1; i >= 0; i--){
@@ -314,12 +337,33 @@ static int resolveLocal(Compiler* compiler, Token* name){
 
     return -1;
 }
+
+static int resolveUpValue(Compiler* compiler, Token* name){
+    if(compiler->enclosing == NULL) return -1;
+
+    int local = resolveLocal(compiler->enclosing, name);
+    if(local != -1){
+        compiler->enclosing->locals[local].isCaptured = true;
+        return addUpValue(compiler, (uint8_t)local, true);
+    }
+
+    int upvalue = resolveUpValue(compiler->enclosing, name);
+    if(upvalue != -1){
+        return addUpValue(compiler, (uint8_t)upvalue, false);
+    }
+
+    return -1;
+}
+
 static void namedVariable(Token name, bool canAssign){
     uint8_t getOp, setOp;
     int arg = resolveLocal(current, &name);
     if(arg != -1){
         getOp = OP_GET_LOCAL;
         setOp = OP_SET_LOCAL;
+    }else if((arg = resolveUpValue(current, &name)) != -1){
+        getOp = OP_GET_UPVALUE;
+        setOp = OP_SET_UPVALUE;
     }else{
         arg = identifierConstant(&name);
         getOp = OP_GET_GLOBAL;
@@ -459,7 +503,13 @@ static void endScope(){
     current->scopeDepth--;
 
     while(current->localCount > 0 && current->locals[current->localCount-1].depth > current->scopeDepth){
-        emitByte(OP_POP);
+        
+        if(current->locals[current->localCount-1].isCaptured){
+            emitByte(OP_CLOSE_UPVALUE);
+        }else{
+
+            emitByte(OP_POP);
+        }
         current->localCount--;
     }
 }
@@ -633,6 +683,7 @@ static void addLocal(Token name){
     Local* local = &current->locals[current->localCount++];
     local->name = name;
     local->depth = -1;
+    local->isCaptured = false;
 }
 
 
@@ -698,7 +749,12 @@ static void function(FunctionType type){
     block();
 
     objFunction* function = endCompiler();
-    emitBytes(OP_CONSTANT, makeConstant(OBJ_VAL(function)));
+    emitBytes(OP_CLOSURE, makeConstant(OBJ_VAL(function)));
+
+    for(int i = 0; i < function->upValueCount; i++){
+        emitByte(compiler.upValues[i].isLocal ? 1 : 0);
+        emitByte(compiler.upValues[i].index);
+    }
 }
 static void funDeclaration(){
     uint8_t global = parseVariable("Expect function name.");
