@@ -4,23 +4,30 @@
 #include "common.h"
 #include "value.h"
 #include "chunk.h"
+#include "table.h"
 
 #define OBJ_TYPE(value) (AS_OBJ(value)->type)
 
 #define IS_STRING(value) isObjType(value, OBJ_STRING)
 #define IS_NATIVE(value) isObjType(value, OBJ_NATIVE)
+#define IS_CLASS(value) isObjType(value, OBJ_CLASS)
+#define IS_INSTANCE(value) isObjType(value, OBJ_INSTANCE)
 #define IS_CLOSURE(value) isObjType(value, OBJ_CLOSURE)
 #define IS_FUNCTION(value) isObjType(value, OBJ_FUNCTION)
 
 #define AS_STRING(value) ((objString*)AS_OBJ(value))
 #define AS_CSTRING(value) (((objString*)AS_OBJ(value))->chars)
+#define AS_CLASS(value) ((objClass*)AS_OBJ(value))
+#define AS_INSTANCE(value) ((objInstance*)AS_OBJ(value))
 #define AS_CLOSURE(value) ((objClosure*)AS_OBJ(value))
 #define AS_FUNCTION(value) ((objFunction*)AS_OBJ(value))
 #define AS_NATIVE(value) (((objNative*)AS_OBJ(value))->function)
 
 typedef enum {
+  OBJ_CLASS,
   OBJ_CLOSURE,
   OBJ_FUNCTION,
+  OBJ_INSTANCE,
   OBJ_NATIVE,
   OBJ_STRING,
   OBJ_UPVALUE,
@@ -28,6 +35,7 @@ typedef enum {
 
 struct obj {
   objType type;
+  bool isMarked;
   struct obj* next;
 };
 
@@ -55,6 +63,17 @@ typedef struct {
   int upValueCount;
 } objClosure;
 
+typedef struct {
+  obj obj;
+  objString* name;
+} objClass;
+
+typedef struct {
+  obj obj;
+  objClass* klass;
+  Table fields;
+} objInstance;
+
 typedef Value (*NativeFn)(int argCount, Value* args);
 
 typedef struct {
@@ -71,7 +90,8 @@ struct objString {
   uint32_t hash;
 };
 
-
+objClass* newClass(objString* name);
+objInstance* newInstance(objClass* klass);
 objClosure* newClosure(objFunction* function);
 objFunction* newFunction();
 objNative* newNative(NativeFn function);

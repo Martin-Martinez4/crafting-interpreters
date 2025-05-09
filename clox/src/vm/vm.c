@@ -61,6 +61,14 @@ static void defineNative(const char* name, NativeFn function){
 void initVM(){
     resetStack();
     vm.objects = NULL;
+
+    vm.bytesAllocated = 0;
+    vm.nextGC = 1024 * 1024;
+
+    vm.grayCount = 0;
+    vm.grayCapacity = 1;
+    vm.grayStack = NULL;
+
     initTable(&vm.globals);
     initTable(&vm.strings);
 
@@ -81,8 +89,8 @@ static bool isFalsey(Value value){
 }
 
 static void concatenate(){
-    objString* b = AS_STRING(pop());
-    objString* a = AS_STRING(pop());
+    objString* b = AS_STRING(peek(0));
+    objString* a = AS_STRING(peek(1));
 
     int length = a->length + b->length;
     char* chars = ALLOCATE(char, length+1);
@@ -91,6 +99,8 @@ static void concatenate(){
     chars[length] = '\0';
 
     objString* res = takeString(chars, length);
+    pop();
+    pop();
     push(OBJ_VAL(res));
 }
 
@@ -118,6 +128,11 @@ static bool callValue(Value callee, int argCount){
         switch (OBJ_TYPE(callee)){
             // case OBJ_FUNCTION:
             //     return call(AS_FUNCTION(callee), argCount);
+            case OBJ_CLASS:{
+                objClass* klass = AS_CLASS(callee);
+                vm.stackTop[-argCount-1] = OBJ_VAL(newInstance(klass));
+                return true;
+            }
 
             case OBJ_CLOSURE:
                 return call(AS_CLOSURE(callee), argCount);
@@ -385,6 +400,29 @@ static InterpreterResult run() {
             pop();
             break;
         }
+
+        case OP_CLASS:{
+            push(OBJ_VAL(newClass(READ_STRING())));
+            break;
+        }
+
+        case OP_GET_PROPERTY:{
+            objInstance* instance = AS_INSTANCE(peek(0));
+            objString* name = READ_STRING();
+
+            Value value;
+            if(tableGet(&instance->fields, name, &value)){
+                pop();
+                push(value);
+                break;
+            }
+
+            
+        }
+
+
+        case OP_SET_PROPERTY:
+            break;
 
            
         }

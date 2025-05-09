@@ -5,6 +5,6 @@
 #include "chunk.h"
 
 objFunction* compile(const char* source);
-
+void markCompilerRoots();
 
 #endif
