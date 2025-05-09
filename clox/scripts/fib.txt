@@ -1,5 +1,5 @@
 
-var c11 = clock();
+var c1 = clock();
 
 fun fib(n) {
   if(n <= 1){
@@ -9,11 +9,11 @@ fun fib(n) {
   return fib(n-2) + fib(n-1);
 }
 
-for(var i = 0; i < 25; i = i + 1) {
+for(var i = 0; i < 30; i = i + 1) {
   print fib(i);
 }
 
-var c3 = 3;
+var c2 = clock();
 var t = "time: ";
 print t;
-print clock() - c11;
+print c2 - c1;

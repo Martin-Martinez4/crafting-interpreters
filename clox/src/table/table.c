@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "memory.h"
 #include "object.h"
@@ -20,7 +21,7 @@ void freeTable(Table *table){
 }
 
 static Entry* findEntry(Entry* entries, int capacity, objString* key){
-    uint32_t index =key->hash & (capacity - 1);;
+    uint32_t index = key->hash % capacity;
     Entry* tombstone = NULL;
 
     for(;;){
@@ -38,7 +39,7 @@ static Entry* findEntry(Entry* entries, int capacity, objString* key){
             // We found the key.
             return entry;
           }
-          index = (index + 1) & (capacity - 1);
+          index = (index + 1) % capacity;
     }
 }
 
@@ -66,7 +67,7 @@ static void adjustCapacity(Table* table, int capacity){
 }
 
 bool tableSet(Table *table, objString *key, Value value){
-    if(table->count + 1 > (table->capacity * TABLE_MAX_LOAD)){
+    if(table->count + 1 > table->capacity * TABLE_MAX_LOAD){
         int capacity = GROW_CAPACITY(table->capacity);
         adjustCapacity(table, capacity);
     }
@@ -120,8 +121,10 @@ objString* tableFindString(Table* table, const char* chars, int length, uint32_t
         Entry* entry = &table->entries[index];
         if(entry->key == NULL){
             if(IS_NIL(entry->value)) return NULL;
-        }else if(entry->key->length == length && entry->key->hash == hash && memcmp(entry->key->chars, chars, length) == 0){
-            return entry->key;
+        } else if (entry->key->length == length &&
+            entry->key->hash == hash &&
+            memcmp(entry->key->chars, chars, length) == 0) {
+          return entry->key;
         }
 
         index = (index + 1) % table->capacity;

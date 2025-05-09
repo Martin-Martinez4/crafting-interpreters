@@ -116,18 +116,20 @@ static bool call(objClosure* closure, int argCount){
 static bool callValue(Value callee, int argCount){
     if(IS_OBJ(callee)){
         switch (OBJ_TYPE(callee)){
-            case OBJ_FUNCTION:
-                return call(AS_FUNCTION(callee), argCount);
+            // case OBJ_FUNCTION:
+            //     return call(AS_FUNCTION(callee), argCount);
 
             case OBJ_CLOSURE:
                 return call(AS_CLOSURE(callee), argCount);
 
-            case OBJ_NATIVE:
+            case OBJ_NATIVE:{
+                
                 NativeFn native = AS_NATIVE(callee);
                 Value result = native(argCount, vm.stackTop - argCount);
                 vm.stackTop -= argCount + 1;
                 push(result);
                 return true;
+            }
             default:
                 break;
         }
@@ -204,13 +206,15 @@ static InterpreterResult run() {
         uint8_t instruction;
 
         switch (instruction = READ_BYTE()){
-            case OP_NEGATE:
+            case OP_NEGATE:{
+
                 if(!IS_NUMBER(peek(0))) {
                     runtimeError("Operand must be a number");
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 push(NUMBER_VAL(-AS_NUMBER(pop())));
                 break;
+            }
             case OP_GREATER: BINARY_OP(BOOL_VAL, >); break;
             case OP_LESS: BINARY_OP(BOOL_VAL, <); break;
             case OP_ADD:
@@ -236,7 +240,8 @@ static InterpreterResult run() {
                 printf("\n");
                 break;
 
-            case OP_RETURN:
+            case OP_RETURN:{
+
                 Value result = pop();
                 closeUpValues(frame->slots);
                 vm.frameCount--;
@@ -249,13 +254,16 @@ static InterpreterResult run() {
                 push(result);
                 frame = &vm.frames[vm.frameCount - 1];
                 break;
+            }
             
-            case OP_CONSTANT:
+            case OP_CONSTANT:{
+
                 Value constant = READ_CONSTANT();
                 push(constant);
                 // printValue(constant);
                 // printf("\n");
                 break;
+            }
 
             case OP_NIL: push(NIL_VAL); break;
             case OP_TRUE: push(BOOL_VAL(true)); break;
@@ -306,16 +314,15 @@ static InterpreterResult run() {
                 break;
             }
 
-            case OP_SET_GLOBAL:{
-
+            case OP_SET_GLOBAL: {
                 objString* name = READ_STRING();
-                if(tableSet(&vm.globals, name, peek(0))){
-                    tableDelete(&vm.globals, name);
-                    runtimeError("Undefined variable '%s'", name->chars);
-                    return INTERPRET_RUNTIME_ERROR;
+                if (tableSet(&vm.globals, name, peek(0))) {
+                  tableDelete(&vm.globals, name); // [delete]
+                  runtimeError("Undefined variable '%s'.", name->chars);
+                  return INTERPRET_RUNTIME_ERROR;
                 }
                 break;
-            }
+              }
 
             case OP_JUMP_IF_FALSE: {
                 uint16_t offset = READ_SHORT();

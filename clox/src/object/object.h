@@ -15,7 +15,7 @@
 #define AS_STRING(value) ((objString*)AS_OBJ(value))
 #define AS_CSTRING(value) (((objString*)AS_OBJ(value))->chars)
 #define AS_CLOSURE(value) ((objClosure*)AS_OBJ(value))
-#define AS_FUNCTION(value) ((objFunction*)AS_OBJ(value)) 
+#define AS_FUNCTION(value) ((objFunction*)AS_OBJ(value))
 #define AS_NATIVE(value) (((objNative*)AS_OBJ(value))->function)
 
 typedef enum {
@@ -41,12 +41,13 @@ typedef struct {
 } objFunction;
 
 
-typedef struct{
+typedef struct objUpValue{
   obj obj;
   Value* location;
   Value closed;
   struct objUpValue* next;
 } objUpValue;
+
 typedef struct {
   obj obj;
   objFunction* function;
