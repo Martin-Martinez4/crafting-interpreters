@@ -72,7 +72,6 @@ void initVM(){
     initTable(&vm.globals);
     initTable(&vm.strings);
 
-    vm.initString = NULL;
     vm.initString = copyString("init", 4);
 
     defineNative("clock", clockNative);
@@ -207,7 +206,6 @@ static void closeUpValues(Value* last){
 static void defineMethod(objString* name){
     Value method = peek(0);
     objClass* klass = AS_CLASS(peek(1));
-    printf("method: %s", name->chars);
     tableSet(&klass->methods, name, method);
     pop();
 }
@@ -497,12 +495,9 @@ static InterpreterResult run() {
             }
             break;
 
-            runtimeError("Undefined property '%s'.", name->chars);
-            return INTERPRET_RUNTIME_ERROR;
 
             
         }
-
 
         case OP_SET_PROPERTY:{
             
