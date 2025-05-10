@@ -172,7 +172,7 @@ static void emitReturn(){
 
         emitByte(OP_NIL);
     }
-    emitByte(TOKEN_RETURN);
+    emitByte(OP_RETURN);
 }
 
 static objFunction* endCompiler(){
