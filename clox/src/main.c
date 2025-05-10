@@ -43,7 +43,7 @@ static char* readFile(const char* path) {
 static void runFile(const char* path) {
   char* source = readFile(path);
   InterpreterResult result = interpret(source);
-  free(source); // [owner]
+  free(source);
 
   if (result == INTERPRET_COMPILE_ERROR) exit(65);
   if (result == INTERPRET_RUNTIME_ERROR) exit(70);

@@ -10,6 +10,7 @@
 
 #define IS_STRING(value) isObjType(value, OBJ_STRING)
 #define IS_NATIVE(value) isObjType(value, OBJ_NATIVE)
+#define IS_BOUND_METHOD(value) isObjType(value, OBJ_BOUND_METHOD)
 #define IS_CLASS(value) isObjType(value, OBJ_CLASS)
 #define IS_INSTANCE(value) isObjType(value, OBJ_INSTANCE)
 #define IS_CLOSURE(value) isObjType(value, OBJ_CLOSURE)
@@ -17,6 +18,7 @@
 
 #define AS_STRING(value) ((objString*)AS_OBJ(value))
 #define AS_CSTRING(value) (((objString*)AS_OBJ(value))->chars)
+#define AS_BOUND_METHOD(value) ((objBoundMethod*)AS_OBJ(value))
 #define AS_CLASS(value) ((objClass*)AS_OBJ(value))
 #define AS_INSTANCE(value) ((objInstance*)AS_OBJ(value))
 #define AS_CLOSURE(value) ((objClosure*)AS_OBJ(value))
@@ -24,6 +26,7 @@
 #define AS_NATIVE(value) (((objNative*)AS_OBJ(value))->function)
 
 typedef enum {
+  OBJ_BOUND_METHOD,
   OBJ_CLASS,
   OBJ_CLOSURE,
   OBJ_FUNCTION,
@@ -66,6 +69,7 @@ typedef struct {
 typedef struct {
   obj obj;
   objString* name;
+  Table methods;
 } objClass;
 
 typedef struct {
@@ -73,6 +77,12 @@ typedef struct {
   objClass* klass;
   Table fields;
 } objInstance;
+
+typedef struct {
+  obj obj;
+  Value receiver;
+  objClosure* method;
+} objBoundMethod;
 
 typedef Value (*NativeFn)(int argCount, Value* args);
 
@@ -90,6 +100,7 @@ struct objString {
   uint32_t hash;
 };
 
+objBoundMethod* newBoundMethod(Value receiver, objClosure* method);
 objClass* newClass(objString* name);
 objInstance* newInstance(objClass* klass);
 objClosure* newClosure(objFunction* function);

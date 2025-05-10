@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include "memory.h"
-#include "object.h"
-#include "value.h"
+#include "table.h"
 #include "vm.h"
 #include "compiler.h"
 
@@ -25,6 +24,7 @@ void* reallocate(void* pointer, size_t oldSize, size_t newSize){
   }
 
   if(newSize == 0){
+
     free(pointer);
     return NULL;
   }
@@ -63,6 +63,8 @@ void freeObject(obj* object){
     }
 
     case OBJ_CLASS:{
+      objClass* klass = (objClass*)object;
+      freeTable(&klass->methods);
       FREE(objClass, object);
       break;
     }
@@ -76,14 +78,17 @@ void freeObject(obj* object){
 
     case OBJ_CLOSURE:{
       objClosure* closure = (objClosure*)object;
-      FREE_ARRAY(objUpValue*, closure->upValues,
-                 closure->upValueCount);
+      FREE_ARRAY(objUpValue*, closure->upValues, closure->upValueCount);
       FREE(objClosure, object);
       break;
     }
 
     case OBJ_UPVALUE:
       FREE(objUpValue, object);
+      break;
+
+    case OBJ_BOUND_METHOD:
+      FREE(objBoundMethod, object);
       break;
   }
 }
@@ -102,7 +107,7 @@ void markObject(obj* object){
 
   if(vm.grayCapacity < vm.grayCount + 1){
     vm.grayCapacity = GROW_CAPACITY(vm.grayCapacity);
-    vm.grayStack = (obj*)realloc(vm.grayStack, sizeof(obj*) + vm.grayCapacity);
+    vm.grayStack = (obj**)realloc(vm.grayStack, sizeof(obj*) + vm.grayCapacity);
 
     if(vm.grayStack == NULL) exit(1);
   }
@@ -132,6 +137,7 @@ static void blackenObject(obj* object){
     case OBJ_CLASS:{
       objClass* klass = (objClass*)object;
       markObject((obj*)klass->name);
+      markTable(&klass->methods);
       break;
     }
 
@@ -161,6 +167,12 @@ static void blackenObject(obj* object){
     case OBJ_NATIVE:
     case OBJ_STRING:
     break;
+
+    case OBJ_BOUND_METHOD:{
+      objBoundMethod* bound = (objBoundMethod*)object;
+      markValue(bound->receiver);
+      markObject((obj*)bound->method);
+    }
   }
 }
 
@@ -169,7 +181,7 @@ static void markRoots(){
     markValue(*slot);
   }
 
-  for(int i = 0; i , vm.frameCount; i++){
+  for(int i = 0; i < vm.frameCount; i++){
     markObject((obj*)vm.frames[i].closure);
   }
 
@@ -179,6 +191,7 @@ static void markRoots(){
 
   markTable(&vm.globals);
   markCompilerRoots();
+  markObject((obj*)vm.initString);
 }
 
 static void traceReference(){

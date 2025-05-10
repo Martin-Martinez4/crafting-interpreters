@@ -66,18 +66,23 @@ void initVM(){
     vm.nextGC = 1024 * 1024;
 
     vm.grayCount = 0;
-    vm.grayCapacity = 1;
+    vm.grayCapacity = 0;
     vm.grayStack = NULL;
 
     initTable(&vm.globals);
     initTable(&vm.strings);
+
+    vm.initString = NULL;
+    vm.initString = copyString("init", 4);
 
     defineNative("clock", clockNative);
 }
 void freeVM(){
     freeTable(&vm.globals);
     freeTable(&vm.strings);
+    vm.initString = NULL;
     freeObjects();
+    
 }
 
 static Value peek(int distance) {
@@ -128,9 +133,21 @@ static bool callValue(Value callee, int argCount){
         switch (OBJ_TYPE(callee)){
             // case OBJ_FUNCTION:
             //     return call(AS_FUNCTION(callee), argCount);
+            case OBJ_BOUND_METHOD:{
+                objBoundMethod* bound = AS_BOUND_METHOD(callee);
+                vm.stackTop[-argCount - 1] = bound->receiver;
+                return call(bound->method, argCount);
+            }
             case OBJ_CLASS:{
                 objClass* klass = AS_CLASS(callee);
                 vm.stackTop[-argCount-1] = OBJ_VAL(newInstance(klass));
+                Value initializer;
+                if(tableGet(&klass->methods, vm.initString, &initializer)){
+                    return call(AS_CLOSURE(initializer), argCount);
+                }else if(argCount != 0){
+                    runtimeError("Expected 0 arguments but got %d", argCount);
+                    return false;
+                }
                 return true;
             }
 
@@ -185,6 +202,57 @@ static void closeUpValues(Value* last){
         upvalue->location = &upvalue->closed;
         vm.openUpValues = upvalue->next;
     }
+}
+
+static void defineMethod(objString* name){
+    Value method = peek(0);
+    objClass* klass = AS_CLASS(peek(1));
+    printf("method: %s", name->chars);
+    tableSet(&klass->methods, name, method);
+    pop();
+}
+
+static bool bindMethod(objClass* klass, objString* name){
+    Value method;
+    if(!tableGet(&klass->methods, name, &method)){
+        runtimeError("undefined method '%s'.", name->chars);
+        return false;
+    }
+
+    objBoundMethod* bound = newBoundMethod(peek(0), AS_CLOSURE(method));
+
+    pop();
+    push(OBJ_VAL(bound));
+    return true;
+}
+
+static bool invokeFromClass(objClass* klass, objString* name, int argCount) {
+  Value method;
+  if (!tableGet(&klass->methods, name, &method)) {
+    runtimeError("Undefined property '%s'.", name->chars);
+    return false;
+  }
+  return call(AS_CLOSURE(method), argCount);
+}
+
+static bool invoke(objString* name, int argCount) {
+  Value receiver = peek(argCount);
+
+  if (!IS_INSTANCE(receiver)) {
+    runtimeError("Only instances have methods.");
+    return false;
+  }
+
+  objInstance* instance = AS_INSTANCE(receiver);
+
+  Value value;
+  if (tableGet(&instance->fields, name, &value)) {
+    vm.stackTop[-argCount - 1] = value;
+    return callValue(value, argCount);
+  }
+
+//< invoke-field
+  return invokeFromClass(instance->klass, name, argCount);
 }
 
 static InterpreterResult run() {
@@ -407,6 +475,12 @@ static InterpreterResult run() {
         }
 
         case OP_GET_PROPERTY:{
+
+            if(!IS_INSTANCE(peek(0))){
+                runtimeError("Only instances have properties.");
+                return INTERPRET_RUNTIME_ERROR;
+            }
+
             objInstance* instance = AS_INSTANCE(peek(0));
             objString* name = READ_STRING();
 
@@ -417,12 +491,50 @@ static InterpreterResult run() {
                 break;
             }
 
+
+            if(!bindMethod(instance->klass, name)){
+                return INTERPRET_RUNTIME_ERROR;
+            }
+            break;
+
+            runtimeError("Undefined property '%s'.", name->chars);
+            return INTERPRET_RUNTIME_ERROR;
+
             
         }
 
 
-        case OP_SET_PROPERTY:
+        case OP_SET_PROPERTY:{
+            
+            if(!IS_INSTANCE(peek(1))){
+                runtimeError("ONly instances have fields.");
+                return INTERPRET_RUNTIME_ERROR;
+            }
+
+            objInstance* instance = AS_INSTANCE(peek(1));
+            tableSet(&instance->fields, READ_STRING(), peek(0));
+            Value value = pop();
+            pop();
+            push(value);
             break;
+
+        }
+
+        case OP_METHOD:{
+            defineMethod(READ_STRING());
+            break;
+        }
+
+        case OP_INVOKE:{
+            objString* method = READ_STRING();
+            int argCount = READ_BYTE();
+            if(!invoke(method, argCount)){
+                return INTERPRET_RUNTIME_ERROR;
+            }
+
+            frame = &vm.frames[vm.frameCount - 1];
+            break;
+        }
 
            
         }

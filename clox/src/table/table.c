@@ -1,9 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 #include "memory.h"
-#include "object.h"
 #include "table.h"
 #include "value.h"
 
@@ -55,7 +53,7 @@ static void adjustCapacity(Table* table, int capacity){
         Entry* entry = &table->entries[i];
         if(entry->key == NULL) continue;
 
-        Entry* dest = findEntry(entries, capacity, entries->key);
+        Entry* dest = findEntry(entries, capacity,entry->key);
         dest->key = entry->key;
         dest->value = entry->value;
         table->count++;

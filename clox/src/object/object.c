@@ -26,9 +26,17 @@ static obj* allocateObject(size_t size, objType type){
   return object;
 }
 
+objBoundMethod* newBoundMethod(Value receiver, objClosure* method){
+  objBoundMethod* bound = ALLOCATE_OBJ(objBoundMethod, OBJ_BOUND_METHOD);
+  bound->receiver = receiver;
+  bound->method = method;
+  return bound;
+}
+
 objClass* newClass(objString* name){
   objClass* klass = ALLOCATE_OBJ(objClass, OBJ_CLASS);
   klass->name = name;
+  initTable(&klass->methods);
   return klass;
 }
 
@@ -129,6 +137,10 @@ objUpValue* newUpValue(Value* slot){
 
 void printObject(Value value){
   switch(OBJ_TYPE(value)){
+    case OBJ_BOUND_METHOD:{
+      printFunction(AS_BOUND_METHOD(value)->method->function);
+      break;
+    }
     case OBJ_CLASS:{
       
       printf("%s", AS_CLASS(value)->name->chars);

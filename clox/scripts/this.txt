@@ -1,12 +1,12 @@
+class CoffeeMaker{
+  init(coffee){
+    this.coffee = coffee;
+  }
 
-class Cake{
-  taste(){
-    var adjective = "delicious";
-    print "The " + this.flavor + " cake is " + adjective + ".";
+  brew() {
+    print "Making cup of " + this.coffee;
   }
 }
 
-var cake = Cake();
-cake.flavor = "Chocolate";
-cake.taste();
-
+var maker = CoffeeMaker("coffee");
+maker.brew();
