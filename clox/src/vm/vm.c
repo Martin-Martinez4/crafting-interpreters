@@ -531,6 +531,39 @@ static InterpreterResult run() {
             break;
         }
 
+        case OP_INHERIT:{
+            Value superclass = peek(1);
+            if(!IS_CLASS(superclass)){
+                runtimeError("Superclass must be a class.");
+                return INTERPRET_RUNTIME_ERROR;
+            }
+            objClass* subclass = AS_CLASS(peek(0));
+            tableAddAll(&AS_CLASS(superclass)->methods, &subclass->methods);
+            pop();
+            break;
+        }
+
+        case OP_GET_SUPER:{
+            objString* name = READ_STRING();
+            objClass* superclass = AS_CLASS(pop());
+
+            if(!bindMethod(superclass, name)){
+                return INTERPRET_RUNTIME_ERROR;
+            }
+            break;
+        }
+
+        case OP_SUPER_INVOKE:{
+            objString* method = READ_STRING();
+            int argCount = READ_BYTE();
+            objClass* superclass = AS_CLASS(pop());
+            if(!invokeFromClass(superclass, method, argCount)){
+                return INTERPRET_RUNTIME_ERROR;
+            }
+            frame = &vm.frames[vm.frameCount - 1];
+            break;
+        }
+
            
         }
 
